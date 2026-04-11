@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stefna — Mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;--bg2:#111;--bg3:#1a1a1a;
+  --b:rgba(255,255,255,0.08);--bh:rgba(255,255,255,0.16);
+  --t:#fff;--t2:rgba(255,255,255,0.55);--t3:rgba(255,255,255,0.3);
+  --accent:#5DCAA5;--accent-dim:rgba(93,202,165,0.1);
+  --serif:'DM Serif Display',serif;--sans:'DM Sans',sans-serif;
+}
+body{background:var(--bg);color:var(--t);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,10,0.95);backdrop-filter:blur(12px);border-bottom:0.5px solid var(--b);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:var(--serif);font-size:18px;color:var(--t)}
+.nav-badge{font-size:11px;color:var(--t3);letter-spacing:0.08em;text-transform:uppercase}
+.sidebar{position:fixed;top:56px;left:0;bottom:0;width:220px;background:var(--bg2);border-right:0.5px solid var(--b);overflow-y:auto;padding:16px 0}
+.sb-section{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--t3);padding:12px 16px 6px}
+.sb-item{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:13px;color:var(--t2);cursor:pointer;border-left:2px solid transparent;transition:all 0.15s}
+.sb-item:hover{color:var(--t);background:rgba(255,255,255,0.03)}
+.sb-item.active{color:var(--t);border-left-color:var(--accent);background:rgba(93,202,165,0.06)}
+.sb-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sb-route{font-size:10px;color:var(--t3);font-family:monospace;margin-top:1px}
+.main{margin-left:220px;padding-top:56px;min-height:100vh}
+.frame-wrap{padding:32px;background:var(--bg);min-height:calc(100vh - 56px)}
+.frame-header{margin-bottom:24px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.frame-title{font-family:var(--serif);font-size:24px;font-weight:400;letter-spacing:-0.02em}
+.frame-meta{font-size:12px;color:var(--t3);margin-top:4px;font-family:monospace}
+.status-badge{font-size:11px;padding:4px 12px;border-radius:20px;font-weight:500}
+.live{background:var(--accent);color:#0a0a0a}
+.designed{background:#FAEEDA;color:#633806}
+.pending{background:rgba(255,255,255,0.08);color:var(--t3)}
+iframe{width:100%;border:0.5px solid var(--b);border-radius:16px;background:#fff;display:block}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:500px;gap:16px;opacity:0.4}
+.empty-icon{font-size:48px}
+.notes{margin-top:24px;background:var(--bg2);border:0.5px solid var(--b);border-radius:12px;padding:20px}
+.notes-title{font-size:12px;font-weight:500;color:var(--t2);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.06em}
+.note-item{display:flex;gap:10px;font-size:13px;color:var(--t2);margin-bottom:8px;line-height:1.5}
+.note-dot{width:4px;height:4px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:6px}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo">Stefna</span>
+  <span class="nav-badge">Mockups internos · v1 · Abr 2026</span>
+</nav>
+
+<div class="sidebar">
+  <div class="sb-section">Público · stefna.app</div>
+  <div class="sb-item active" onclick="show('landing')" id="nav-landing">
+    <div class="sb-dot" style="background:#5DCAA5"></div>
+    <div><div>Landing</div><div class="sb-route">/</div></div>
+  </div>
+  <div class="sb-item" onclick="show('onboarding')" id="nav-onboarding">
+    <div class="sb-dot" style="background:#EF9F27"></div>
+    <div><div>Onboarding</div><div class="sb-route">/empezar</div></div>
+  </div>
+
+  <div class="sb-section">Cliente · /dashboard</div>
+  <div class="sb-item" onclick="show('dash-resumen')" id="nav-dash-resumen">
+    <div class="sb-dot" style="background:#EF9F27"></div>
+    <div><div>Resumen semanal</div><div class="sb-route">/dashboard</div></div>
+  </div>
+  <div class="sb-item" onclick="show('dash-pedidos')" id="nav-dash-pedidos">
+    <div class="sb-dot" style="background:#EF9F27"></div>
+    <div><div>Pedidos</div><div class="sb-route">/dashboard/pedidos</div></div>
+  </div>
+  <div class="sb-item" onclick="show('dash-wa')" id="nav-dash-wa">
+    <div class="sb-dot" style="background:#EF9F27"></div>
+    <div><div>Conversaciones WA</div><div class="sb-route">/dashboard/wa</div></div>
+  </div>
+  <div class="sb-item" onclick="show('dash-cajas')" id="nav-dash-cajas">
+    <div class="sb-dot" style="background:#EF9F27"></div>
+    <div><div>Estado cajas</div><div class="sb-route">/dashboard/cajas</div></div>
+  </div>
+
+  <div class="sb-section">Admin · /admin</div>
+  <div class="sb-item" onclick="show('admin-semaforo')" id="nav-admin-semaforo">
+    <div class="sb-dot" style="background:#EF9F27"></div>
+    <div><div>Semáforo clientes</div><div class="sb-route">/admin</div></div>
+  </div>
+  <div class="sb-item" onclick="show('admin-operacion')" id="nav-admin-operacion">
+    <div class="sb-dot" style="background:#EF9F27"></div>
+    <div><div>Operación interna</div><div class="sb-route">/admin/operacion</div></div>
+  </div>
+  <div class="sb-item" onclick="show('admin-setup')" id="nav-admin-setup">
+    <div class="sb-dot" style="background:#EF9F27"></div>
+    <div><div>Setup en curso</div><div class="sb-route">/admin/setup</div></div>
+  </div>
+  <div class="sb-item" onclick="show('admin-revenue')" id="nav-admin-revenue">
+    <div class="sb-dot" style="background:#EF9F27"></div>
+    <div><div>Revenue</div><div class="sb-route">/admin/revenue</div></div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="frame-wrap" id="content">
+
+    <!-- LANDING -->
+    <div id="screen-landing">
+      <div class="frame-header">
+        <div>
+          <h1 class="frame-title">Landing — stefna.app</h1>
+          <p class="frame-meta">/ · Next.js · static · live en producción</p>
+        </div>
+        <span class="status-badge live">✓ Live</span>
+      </div>
+      <iframe src="https://de1337a9.stefna.pages.dev" height="800" title="Landing Stefna"></iframe>
+      <div class="notes">
+        <p class="notes-title">Notas de diseño</p>
+        <div class="note-item"><div class="note-dot"></div>Fondo negro #0a0a0a, tipografía DM Serif Display + DM Sans, acento teal #5DCAA5</div>
+        <div class="note-item"><div class="note-dot"></div>Nav fija con blur al hacer scroll</div>
+        <div class="note-item"><div class="note-dot"></div>Hero con grilla sutil y glow radial de acento</div>
+        <div class="note-item"><div class="note-dot"></div>Sin mencionar IA — copy orientado a resultado</div>
+        <div class="note-item"><div class="note-dot"></div>Caso real de Fernando con métricas en sección de casos</div>
+      </div>
+    </div>
+
+    <!-- ONBOARDING -->
+    <div id="screen-onboarding" style="display:none">
+      <div class="frame-header">
+        <div>
+          <h1 class="frame-title">Onboarding — /empezar</h1>
+          <p class="frame-meta">/empezar · 5 pasos · por construir</p>
+        </div>
+        <span class="status-badge designed">Diseñado</span>
+      </div>
+      <iframe src="onboarding.html" height="720" title="Onboarding Stefna"></iframe>
+      <div class="notes">
+        <p class="notes-title">5 pasos</p>
+        <div class="note-item"><div class="note-dot"></div>Paso 1: Cuenta (nombre, email, tel WA)</div>
+        <div class="note-item"><div class="note-dot"></div>Paso 2: Negocio (nombre, rubro, ciudad — default Santiago)</div>
+        <div class="note-item"><div class="note-dot"></div>Paso 3: Canal WA + horarios + delivery</div>
+        <div class="note-item"><div class="note-dot"></div>Paso 4: Plan con recomendación personalizada según rubro</div>
+        <div class="note-item"><div class="note-dot"></div>Paso 5: Resumen + pago MercadoPago</div>
+        <div class="note-item"><div class="note-dot"></div>Integración BSale opcional en paso 2</div>
+      </div>
+    </div>
+
+    <!-- DASH RESUMEN -->
+    <div id="screen-dash-resumen" style="display:none">
+      <div class="frame-header">
+        <div>
+          <h1 class="frame-title">Dashboard — Resumen semanal</h1>
+          <p class="frame-meta">/dashboard · vista principal del cliente</p>
+        </div>
+        <span class="status-badge designed">Diseñado</span>
+      </div>
+      <iframe src="dashboard.html" height="720" title="Dashboard cliente"></iframe>
+      <div class="notes">
+        <p class="notes-title">Decisiones clave</p>
+        <div class="note-item"><div class="note-dot"></div>Banner negro destacado: "mientras dormías tu encargado gestionó X mensajes y generó $Y"</div>
+        <div class="note-item"><div class="note-dot"></div>4 métricas: pedidos, ingresos, visitas web, conversaciones WA</div>
+        <div class="note-item"><div class="note-dot"></div>Preview de últimas conversaciones — el cliente ve exactamente qué respondió su encargado</div>
+        <div class="note-item"><div class="note-dot"></div>Botón "Compartir mi resultado" → imagen con métricas para Instagram (anti-churn + marketing)</div>
+        <div class="note-item"><div class="note-dot"></div>SEO en ámbar con "llevas 18 días, vas bien" — convierte espera en progreso visible</div>
+      </div>
+    </div>
+
+    <!-- DASH PEDIDOS -->
+    <div id="screen-dash-pedidos" style="display:none">
+      <div class="frame-header">
+        <div>
+          <h1 class="frame-title">Dashboard — Pedidos</h1>
+          <p class="frame-meta">/dashboard/pedidos</p>
+        </div>
+        <span class="status-badge designed">Diseñado</span>
+      </div>
+      <iframe src="pedidos.html" height="600" title="Pedidos"></iframe>
+    </div>
+
+    <!-- DASH WA -->
+    <div id="screen-dash-wa" style="display:none">
+      <div class="frame-header">
+        <div>
+          <h1 class="frame-title">Dashboard — Conversaciones WA</h1>
+          <p class="frame-meta">/dashboard/conversaciones</p>
+        </div>
+        <span class="status-badge designed">Diseñado</span>
+      </div>
+      <iframe src="conversaciones.html" height="600" title="Conversaciones WA"></iframe>
+    </div>
+
+    <!-- DASH CAJAS -->
+    <div id="screen-dash-cajas" style="display:none">
+      <div class="frame-header">
+        <div>
+          <h1 class="frame-title">Dashboard — Estado de cajas</h1>
+          <p class="frame-meta">/dashboard/cajas</p>
+        </div>
+        <span class="status-badge designed">Diseñado</span>
+      </div>
+      <iframe src="cajas-estado.html" height="600" title="Estado cajas"></iframe>
+    </div>
+
+    <!-- ADMIN SEMAFORO -->
+    <div id="screen-admin-semaforo" style="display:none">
+      <div class="frame-header">
+        <div>
+          <h1 class="frame-title">Admin — Semáforo de clientes</h1>
+          <p class="frame-meta">/admin · vista principal de operación</p>
+        </div>
+        <span class="status-badge designed">Diseñado</span>
+      </div>
+      <iframe src="admin-semaforo.html" height="720" title="Semáforo clientes"></iframe>
+      <div class="notes">
+        <p class="notes-title">6 variables por cliente</p>
+        <div class="note-item"><div class="note-dot"></div>Encargado WA · Web/dominio · Cobros · SEO · Pago suscripción · Actividad cliente</div>
+        <div class="note-item"><div class="note-dot"></div>Drill-down al hacer click — 6 var-cards + alertas activas</div>
+        <div class="note-item"><div class="note-dot"></div>Corte escalonado: día 5 WA silencioso, día 15 corte total</div>
+      </div>
+    </div>
+
+    <!-- ADMIN OPERACION -->
+    <div id="screen-admin-operacion" style="display:none">
+      <div class="frame-header">
+        <div>
+          <h1 class="frame-title">Admin — Operación interna</h1>
+          <p class="frame-meta">/admin/operacion · agentes + CS</p>
+        </div>
+        <span class="status-badge designed">Diseñado</span>
+      </div>
+      <iframe src="admin-operacion.html" height="720" title="Operación interna"></iframe>
+      <div class="notes">
+        <p class="notes-title">Lo más importante</p>
+        <div class="note-item"><div class="note-dot"></div>Log de acciones autónomas — no "hay problema" sino "el sistema lo detectó y lo resolvió"</div>
+        <div class="note-item"><div class="note-dot"></div>CS: 94% resuelto sin Horacio, solo 1 ticket escala</div>
+        <div class="note-item"><div class="note-dot"></div>Calidad de respuestas por encargado — evaluación automática 24h</div>
+      </div>
+    </div>
+
+    <!-- ADMIN SETUP -->
+    <div id="screen-admin-setup" style="display:none">
+      <div class="frame-header">
+        <div>
+          <h1 class="frame-title">Admin — Setup en curso</h1>
+          <p class="frame-meta">/admin/setup · clientes en proceso</p>
+        </div>
+        <span class="status-badge designed">Diseñado</span>
+      </div>
+      <iframe src="admin-setup.html" height="600" title="Setup en curso"></iframe>
+    </div>
+
+    <!-- ADMIN REVENUE -->
+    <div id="screen-admin-revenue" style="display:none">
+      <div class="frame-header">
+        <div>
+          <h1 class="frame-title">Admin — Revenue</h1>
+          <p class="frame-meta">/admin/revenue · MRR + proyección + churn</p>
+        </div>
+        <span class="status-badge designed">Diseñado</span>
+      </div>
+      <iframe src="admin-revenue.html" height="720" title="Revenue"></iframe>
+      <div class="notes">
+        <p class="notes-title">Métricas clave</p>
+        <div class="note-item"><div class="note-dot"></div>MRR actual + proyección a 50 clientes (agosto 2026)</div>
+        <div class="note-item"><div class="note-dot"></div>Churn risk por cliente con señales tempranas</div>
+        <div class="note-item"><div class="note-dot"></div>Margen 88%, CAC $0 orgánico, LTV estimado $3.4M CLP</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('[id^="screen-"]').forEach(s => s.style.display = 'none')
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'))
+  document.getElementById('screen-' + id).style.display = 'block'
+  document.getElementById('nav-' + id).classList.add('active')
+  window.scrollTo(0, 0)
+}
+</script>
+</body>
+</html>

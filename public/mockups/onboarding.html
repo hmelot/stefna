@@ -1,0 +1,74 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f5f5f3;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;padding:32px}
+.wrap{max-width:700px;margin:0 auto;background:#fff;border-radius:20px;overflow:hidden;border:0.5px solid rgba(0,0,0,0.08)}
+.sidebar{display:grid;grid-template-columns:200px 1fr}
+.sb{background:#fafafa;border-right:0.5px solid rgba(0,0,0,0.08);padding:24px 16px}
+.logo{font-family:'DM Serif Display',serif;font-size:18px;color:#0a0a0a;margin-bottom:24px}
+.step{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:8px;margin-bottom:4px;cursor:pointer}
+.step.active{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.step-num{width:22px;height:22px;border-radius:50%;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:11px;color:#999;flex-shrink:0}
+.step.active .step-num{background:#0a0a0a;color:#fff;border-color:#0a0a0a}
+.step.done .step-num{background:#5DCAA5;color:#fff;border-color:#5DCAA5;font-size:10px}
+.step-label{font-size:12px;font-weight:500;color:#666}
+.step.active .step-label{color:#0a0a0a}
+.step-sub{font-size:11px;color:#aaa;margin-top:1px}
+.content{padding:36px 32px}
+.eyebrow{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#aaa;margin-bottom:8px}
+.title{font-family:'DM Serif Display',serif;font-size:22px;color:#0a0a0a;margin-bottom:6px;letter-spacing:-0.02em;line-height:1.2}
+.desc{font-size:13px;color:#888;margin-bottom:28px;line-height:1.6;font-weight:300}
+.progress{height:2px;background:#f0f0f0;border-radius:2px;margin-bottom:28px}
+.progress-bar{height:2px;background:#0a0a0a;border-radius:2px;width:40%}
+.field{margin-bottom:16px}
+.field label{font-size:12px;color:#666;display:block;margin-bottom:6px}
+.field input,.field select{width:100%;padding:10px 12px;border:1px solid #e8e8e8;border-radius:8px;font-size:13px;color:#0a0a0a;background:#fff;outline:none;font-family:'DM Sans',sans-serif}
+.field input:focus,.field select:focus{border-color:#0a0a0a}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rubro-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+.rubro{padding:12px;border:1px solid #e8e8e8;border-radius:8px;cursor:pointer}
+.rubro.sel{border:1.5px solid #0a0a0a;background:#fafafa}
+.rubro-name{font-size:13px;font-weight:500;color:#0a0a0a}
+.rubro-sub{font-size:11px;color:#aaa;margin-top:1px}
+.footer{display:flex;align-items:center;justify-content:space-between;margin-top:28px;padding-top:20px;border-top:1px solid #f0f0f0}
+.btn-back{font-size:13px;color:#aaa;background:none;border:1px solid #e8e8e8;padding:9px 18px;border-radius:8px;cursor:pointer}
+.btn-next{font-size:13px;font-weight:500;background:#0a0a0a;color:#fff;border:none;padding:9px 22px;border-radius:8px;cursor:pointer}
+</style></head><body>
+<div class="wrap">
+<div class="sidebar">
+  <div class="sb">
+    <p class="logo">Stefna</p>
+    <div class="step done"><div class="step-num">✓</div><div><div class="step-label">Tu cuenta</div><div class="step-sub">Email y contraseña</div></div></div>
+    <div class="step active"><div class="step-num">2</div><div><div class="step-label">Tu negocio</div><div class="step-sub">Nombre y rubro</div></div></div>
+    <div class="step"><div class="step-num">3</div><div><div class="step-label">Tu canal WA</div><div class="step-sub">Número y horarios</div></div></div>
+    <div class="step"><div class="step-num">4</div><div><div class="step-label">Tu plan</div><div class="step-sub">Qué quieres activar</div></div></div>
+    <div class="step"><div class="step-num">5</div><div><div class="step-label">Confirmar</div><div class="step-sub">Resumen y pago</div></div></div>
+  </div>
+  <div class="content">
+    <div class="progress"><div class="progress-bar"></div></div>
+    <p class="eyebrow">Paso 2 de 5</p>
+    <h2 class="title">Cuéntanos de tu negocio</h2>
+    <p class="desc">Con esto personalizamos todo — desde tu web hasta quien responde tus WhatsApp.</p>
+    <div class="field"><label>Nombre del negocio</label><input type="text" placeholder="ej. Panadería Don Luis"></div>
+    <div class="field"><label>¿A qué se dedica?</label>
+    <div class="rubro-grid">
+      <div class="rubro sel"><p class="rubro-name">Charcutería / Deli</p><p class="rubro-sub">Productos elaborados, delivery</p></div>
+      <div class="rubro"><p class="rubro-name">Restaurante / Café</p><p class="rubro-sub">Comida, mesas, take-away</p></div>
+      <div class="rubro"><p class="rubro-name">Panadería / Pastelería</p><p class="rubro-sub">Pan, tortas, repostería</p></div>
+      <div class="rubro"><p class="rubro-name">Tienda / Retail</p><p class="rubro-sub">Productos físicos</p></div>
+      <div class="rubro"><p class="rubro-name">Salud / Belleza</p><p class="rubro-sub">Spa, peluquería, clínica</p></div>
+      <div class="rubro"><p class="rubro-name">Servicios / Otro</p><p class="rubro-sub">Taller, educación, etc.</p></div>
+    </div></div>
+    <div class="grid-2">
+      <div class="field"><label>Ciudad</label><input type="text" value="Santiago" placeholder="ej. Santiago"></div>
+      <div class="field"><label>Dirección (opcional)</label><input type="text" placeholder="ej. Av. Providencia 140"></div>
+    </div>
+    <div class="footer">
+      <button class="btn-back">← Atrás</button>
+      <button class="btn-next">Continuar →</button>
+    </div>
+  </div>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f5f5f3;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased}
+.shell{display:grid;grid-template-columns:200px 1fr;min-height:100vh}
+.sb{background:#fff;border-right:0.5px solid rgba(0,0,0,0.08);padding:20px 0;display:flex;flex-direction:column}
+.sb-top{padding:0 16px 16px;border-bottom:1px solid #f0f0f0;margin-bottom:8px}
+.sb-logo{font-family:'DM Serif Display',serif;font-size:16px;color:#0a0a0a}
+.sb-role{font-size:11px;color:#aaa;margin-top:2px}
+.nav{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:13px;color:#888;cursor:pointer}
+.nav.active{color:#0a0a0a;font-weight:500;background:#fafafa;border-left:2px solid #0a0a0a}
+.nav svg{width:14px;height:14px;opacity:.5}
+.nav.active svg{opacity:1}
+.nb{margin-left:auto;font-size:10px;padding:1px 6px;border-radius:20px;background:#FCEBEB;color:#A32D2D}
+.sb-section{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#bbb;padding:12px 16px 4px}
+.main{padding:24px 28px;background:#f5f5f3}
+.mh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+.mt{font-family:'DM Serif Display',serif;font-size:20px;color:#0a0a0a}
+.ms{font-size:12px;color:#aaa;margin-top:2px}
+.top-m{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:20px}
+.tm{background:#fff;border-radius:10px;padding:12px;border:0.5px solid rgba(0,0,0,0.06)}
+.tm-label{font-size:11px;color:#aaa;margin-bottom:4px}
+.tm-val{font-size:20px;font-weight:400;font-family:'DM Serif Display',serif;color:#0a0a0a}
+.tm-sub{font-size:11px;color:#aaa;margin-top:2px}
+.tm-alert{color:#E24B4A}
+.filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.fb{font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid #e8e8e8;background:#fff;color:#888;cursor:pointer}
+.fb.active{background:#0a0a0a;color:#fff;border-color:#0a0a0a}
+.fb.red{background:#FCEBEB;color:#A32D2D;border-color:#F09595}
+.fb.amber{background:#FAEEDA;color:#633806;border-color:#FAC775}
+.search{flex:1;max-width:200px;padding:5px 10px;font-size:12px;border:1px solid #e8e8e8;border-radius:8px;outline:none;font-family:'DM Sans',sans-serif}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;border:0.5px solid rgba(0,0,0,0.06)}
+th{text-align:left;font-size:11px;font-weight:500;color:#aaa;padding:10px 12px;border-bottom:1px solid #f0f0f0}
+td{padding:10px 12px;font-size:12px;border-bottom:1px solid #f5f5f3;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr.sel{background:#fafafa}
+.biz-name{font-weight:500;color:#0a0a0a}
+.biz-meta{font-size:11px;color:#aaa;margin-top:1px}
+.sem{display:flex;align-items:center;gap:4px;font-size:11px}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.g{background:#1D9E75}.a{background:#EF9F27}.r{background:#E24B4A}.x{background:#ddd}
+.lg{color:#085041}.la{color:#633806}.lr{color:#A32D2D}.lx{color:#aaa}
+.pb{font-size:11px;padding:2px 8px;border-radius:20px}
+.p-c{background:#E1F5EE;color:#085041}.p-a{background:#E6F1FB;color:#0C447C}.p-t{background:#EEEDFE;color:#3C3489}
+.detail{background:#fff;border:0.5px solid rgba(0,0,0,0.06);border-radius:12px;padding:20px;margin-top:16px}
+.dh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #f0f0f0}
+.dn{font-size:16px;font-weight:500;color:#0a0a0a;font-family:'DM Serif Display',serif}
+.dm{font-size:12px;color:#888;margin-top:2px}
+.da{display:flex;gap:6px}
+.btn{font-size:11px;padding:5px 12px;border-radius:8px;border:1px solid #e8e8e8;background:#fafafa;color:#0a0a0a;cursor:pointer}
+.btn.primary{background:#0a0a0a;color:#fff;border-color:#0a0a0a}
+.vars{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.vc{background:#fafafa;border-radius:8px;padding:12px}
+.vc-label{font-size:11px;color:#aaa;margin-bottom:4px}
+.vc-val{font-size:18px;font-weight:400;font-family:'DM Serif Display',serif;color:#0a0a0a}
+.vc-sem{display:flex;align-items:center;gap:4px;margin-top:4px;font-size:11px}
+</style></head><body>
+<div class="shell">
+  <div class="sb">
+    <div class="sb-top"><p class="sb-logo">Stefna Admin</p><p class="sb-role">Horacio · Operaciones</p></div>
+    <div class="nav active"><svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="8" y="1" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="1" y="8" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="8" y="8" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/></svg>Sanidad clientes<span class="nb">3</span></div>
+    <div class="nav"><svg viewBox="0 0 14 14" fill="none"><path d="M7 2v2M7 10v2M2 7h2M10 7h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.2"/></svg>Operación interna</div>
+    <div class="nav"><svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.2"/><path d="M7 4v3l2 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>Setup en curso</div>
+    <div class="nav"><svg viewBox="0 0 14 14" fill="none"><path d="M2 10L5 7l2.5 2.5L12 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Revenue</div>
+    <div class="sb-section">Sistema</div>
+    <div class="nav"><svg viewBox="0 0 14 14" fill="none"><path d="M2 4h10v7a1 1 0 01-1 1H3a1 1 0 01-1-1V4zM5 4V3a1 1 0 011-1h2a1 1 0 011 1v1" stroke="currentColor" stroke-width="1.2"/></svg>Facturación</div>
+    <div class="nav"><svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 12c0-2.5 2.24-4 5-4s5 1.5 5 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>Nuevo cliente</div>
+  </div>
+  <div class="main">
+    <div class="mh">
+      <div><p class="mt">Semáforo de operación</p><p class="ms">Sábado 12 abril · 3 alertas requieren atención hoy</p></div>
+      <button class="btn primary" style="font-size:12px;padding:8px 16px">+ Nuevo cliente</button>
+    </div>
+    <div class="top-m">
+      <div class="tm"><p class="tm-label">Clientes activos</p><p class="tm-val">12</p><p class="tm-sub">de 50 max</p></div>
+      <div class="tm"><p class="tm-label">MRR</p><p class="tm-val">$1.6M</p><p class="tm-sub">CLP / mes</p></div>
+      <div class="tm"><p class="tm-label">En setup</p><p class="tm-val">3</p><p class="tm-sub">últimas 72h</p></div>
+      <div class="tm"><p class="tm-label">Alertas rojas</p><p class="tm-val tm-alert">3</p><p class="tm-sub">requieren acción</p></div>
+      <div class="tm"><p class="tm-label">Pago vencido</p><p class="tm-val tm-alert">1</p><p class="tm-sub">día 5 hoy</p></div>
+    </div>
+    <div class="filter-bar">
+      <button class="fb active">Todos (12)</button>
+      <button class="fb red">Rojo (3)</button>
+      <button class="fb amber">Ámbar (4)</button>
+      <button class="fb" style="background:#E1F5EE;color:#085041;border-color:#9FE1CB">Verde (5)</button>
+      <input class="search" placeholder="Buscar negocio...">
+    </div>
+    <table>
+      <thead><tr>
+        <th>Negocio</th><th>Plan</th><th>WA</th><th>Web</th><th>Pago</th><th>Actividad</th><th>Días</th><th>Global</th>
+      </tr></thead>
+      <tbody>
+        <tr class="sel">
+          <td><p class="biz-name">La Charcutería</p><p class="biz-meta">Puerto Varas · Fernando</p></td>
+          <td><span class="pb p-c">Completo</span></td>
+          <td><div class="sem"><div class="dot g"></div><span class="lg">OK</span></div></td>
+          <td><div class="sem"><div class="dot g"></div><span class="lg">OK</span></div></td>
+          <td><div class="sem"><div class="dot g"></div><span class="lg">Al día</span></div></td>
+          <td><div class="sem"><div class="dot g"></div><span class="lg">Alta</span></div></td>
+          <td style="font-weight:500">18d</td>
+          <td><div class="dot g" style="width:12px;height:12px"></div></td>
+        </tr>
+        <tr>
+          <td><p class="biz-name">Café del Pueblo</p><p class="biz-meta">Santiago · Ana</p></td>
+          <td><span class="pb p-a">Arranque</span></td>
+          <td><div class="sem"><div class="dot x"></div><span class="lx">N/A</span></div></td>
+          <td><div class="sem"><div class="dot a"></div><span class="la">Lento</span></div></td>
+          <td><div class="sem"><div class="dot g"></div><span class="lg">Al día</span></div></td>
+          <td><div class="sem"><div class="dot a"></div><span class="la">Media</span></div></td>
+          <td>34d</td>
+          <td><div class="dot a" style="width:12px;height:12px"></div></td>
+        </tr>
+        <tr>
+          <td><p class="biz-name">Florería Mía</p><p class="biz-meta">Viña del Mar · Claudia</p></td>
+          <td><span class="pb p-t">Total</span></td>
+          <td><div class="sem"><div class="dot r"></div><span class="lr">Caído</span></div></td>
+          <td><div class="sem"><div class="dot g"></div><span class="lg">OK</span></div></td>
+          <td><div class="sem"><div class="dot r"></div><span class="lr">Vencido</span></div></td>
+          <td><div class="sem"><div class="dot r"></div><span class="lr">Baja</span></div></td>
+          <td style="color:#E24B4A;font-weight:500">5d ⚠</td>
+          <td><div class="dot r" style="width:12px;height:12px"></div></td>
+        </tr>
+        <tr>
+          <td><p class="biz-name">Panadería Sol</p><p class="biz-meta">Temuco · Rosa</p></td>
+          <td><span class="pb p-c">Completo</span></td>
+          <td><div class="sem"><div class="dot g"></div><span class="lg">OK</span></div></td>
+          <td><div class="sem"><div class="dot g"></div><span class="lg">OK</span></div></td>
+          <td><div class="sem"><div class="dot g"></div><span class="lg">Al día</span></div></td>
+          <td><div class="sem"><div class="dot g"></div><span class="lg">Alta</span></div></td>
+          <td>45d</td>
+          <td><div class="dot g" style="width:12px;height:12px"></div></td>
+        </tr>
+        <tr>
+          <td colspan="8" style="font-size:12px;color:#aaa">+ 8 clientes más...</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="detail">
+      <div class="dh">
+        <div><p class="dn">La Charcutería · Puerto Varas</p><p class="dm">Fernando · Plan Completo · 18 días activo</p></div>
+        <div class="da"><button class="btn">Ver dashboard</button><button class="btn">WhatsApp</button><button class="btn primary">Resolver alerta</button></div>
+      </div>
+      <div class="vars">
+        <div class="vc"><p class="vc-label">Encargado WA</p><p class="vc-val">Online</p><div class="vc-sem"><div class="dot g"></div><span class="lg">63 conv esta semana</span></div></div>
+        <div class="vc"><p class="vc-label">Web / dominio</p><p class="vc-val">284 visitas</p><div class="vc-sem"><div class="dot g"></div><span class="lg">Uptime 100%</span></div></div>
+        <div class="vc"><p class="vc-label">Cobros</p><p class="vc-val">$312K</p><div class="vc-sem"><div class="dot g"></div><span class="lg">12 transacciones OK</span></div></div>
+        <div class="vc"><p class="vc-label">SEO local</p><p class="vc-val">Pos. #4</p><div class="vc-sem"><div class="dot a"></div><span class="la">Construyendo · día 18</span></div></div>
+        <div class="vc"><p class="vc-label">Pago suscripción</p><p class="vc-val">Al día</p><div class="vc-sem"><div class="dot g"></div><span class="lg">Próximo: 7 mayo</span></div></div>
+        <div class="vc"><p class="vc-label">Actividad cliente</p><p class="vc-val">Alta</p><div class="vc-sem"><div class="dot g"></div><span class="lg">Entró hoy al dashboard</span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>
