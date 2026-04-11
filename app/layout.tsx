@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Vorta — Tu negocio, en movimiento',
+  title: 'Stefna — Tu negocio, en movimiento',
   description: 'Presencia digital premium para negocios que quieren crecer.',
 }
 
