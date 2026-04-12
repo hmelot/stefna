@@ -25,7 +25,7 @@ export const CAJAS: Caja[] = [
     num: '02',
     name: 'Que te encuentren primero',
     desc: 'Cuando buscan tu rubro en tu ciudad, apareces tú — no la competencia.',
-    price: 29_000,
+    price: 59_000,
     included: false,
     items: ['Google Business Profile', 'Keywords locales', 'Reseñas gestionadas', 'Reportes mensuales'],
   },
@@ -34,7 +34,7 @@ export const CAJAS: Caja[] = [
     num: '03',
     name: 'Tu encargado de WhatsApp',
     desc: 'Responde preguntas, toma pedidos, envía tu catálogo y cobra — sin que toques el teléfono.',
-    price: 59_000,
+    price: 89_000,
     included: false,
     items: ['Entrenado con tu negocio', 'Toma pedidos completos', 'Responde en segundos', 'Disponible 24/7'],
   },
@@ -43,7 +43,7 @@ export const CAJAS: Caja[] = [
     num: '04',
     name: 'Redes sin esfuerzo',
     desc: 'Publicaciones semanales en Instagram y Facebook. Tu presencia activa sin que toques nada.',
-    price: 49_000,
+    price: 79_000,
     included: false,
     items: ['4 posts por semana', 'Diseño con tu marca', 'Calendario editorial', 'Historias incluidas'],
   },
@@ -52,7 +52,7 @@ export const CAJAS: Caja[] = [
     num: '05',
     name: 'Recibe pagos al instante',
     desc: 'Link de pago por WhatsApp, transferencia o tarjeta. Sin POS, sin complicaciones.',
-    price: 19_000,
+    price: 29_000,
     included: false,
     items: ['MercadoPago integrado', 'Link directo por WA', 'Confirmación automática'],
   },
@@ -67,7 +67,7 @@ export const CAJAS: Caja[] = [
   },
 ]
 
-export const BASE_PRICE = 49_000 // web + dominio + Google Maps
+export const BASE_PRICE = 89_000 // web + dominio + Google Maps
 
 export const getCaja = (id: CajaId): Caja => {
   const c = CAJAS.find(caja => caja.id === id)

@@ -5,7 +5,7 @@ import type { Industry, WhatsappChannel, CajaId } from '../lib/types'
 import { CAJAS, calcTotal, recommendedCajasFor, BASE_PRICE } from '../lib/cajas'
 import { INDUSTRIES, INDUSTRY_LABELS, WEEKDAYS, type Weekday } from '../lib/labels'
 import { isValidEmail, isValidPhone } from '../lib/validation'
-import { ONBOARDING_STORAGE_KEY } from '../lib/constants'
+import { API_URL, ONBOARDING_STORAGE_KEY } from '../lib/constants'
 
 // Suspense boundary required for useSearchParams with output: 'export'
 export default function EmpezarPage() {
@@ -103,10 +103,21 @@ function Empezar() {
 
   const finalize = async () => {
     setSubmitState('submitting')
-    // TODO: POST to Worker when ready. For now, simulate success.
-    await new Promise(r => setTimeout(r, 1200))
-    setSubmitState('success')
-    try { localStorage.removeItem(ONBOARDING_STORAGE_KEY) } catch {}
+    try {
+      const response = await fetch(`${API_URL}/onboarding`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}))
+        throw new Error((errorBody as any).error || `HTTP ${response.status}`)
+      }
+      setSubmitState('success')
+      try { localStorage.removeItem(ONBOARDING_STORAGE_KEY) } catch {}
+    } catch {
+      setSubmitState('error')
+    }
   }
 
   const advanceDisabled = !canAdvance()

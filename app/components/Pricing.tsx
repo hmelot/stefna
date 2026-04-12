@@ -14,10 +14,10 @@ export default function Pricing() {
             fontSize: 'clamp(2rem, 4vw, 3rem)',
             fontWeight: 400, lineHeight: 1.15, letterSpacing: '-0.02em', marginBottom: 16,
           }}>
-            Simple y sin sorpresas.
+            Arma tu plan. Paga solo lo que necesitas.
           </h2>
-          <p style={{ fontSize: 15, color: 'var(--text-2)', fontWeight: 300 }}>
-            Sin contratos largos. Sin letra chica. Cancelas cuando quieres.
+          <p style={{ fontSize: 15, color: 'var(--text-2)', fontWeight: 300, maxWidth: 480, margin: '0 auto' }}>
+            Empieza con la base y agrega cajas. Sin contratos. Sin letra chica. Cancelas cuando quieras.
           </p>
         </div>
 
@@ -39,17 +39,19 @@ export default function Pricing() {
                   textTransform: 'uppercase', whiteSpace: 'nowrap',
                 }}>
                   Más popular
-                </p>
+              </p>
               )}
               <p style={{ fontSize: 14, fontWeight: 500, marginBottom: 6, marginTop: featured ? 12 : 0 }}>{name}</p>
               <p style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 24, fontWeight: 300, lineHeight: 1.5 }}>{description}</p>
-              <p style={{
-                fontFamily: 'var(--serif)',
-                fontSize: 38, fontWeight: 400, letterSpacing: '-0.03em',
-                marginBottom: 4,
-              }}>
-                ${price}
-              </p>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                {id === 'starter' && <p style={{ fontSize: 13, color: 'var(--text-3)' }}>desde</p>}
+                <p style={{
+                  fontFamily: 'var(--serif)',
+                  fontSize: 38, fontWeight: 400, letterSpacing: '-0.03em',
+                }}>
+                  ${price}
+                </p>
+              </div>
               <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 28 }}>CLP / mes</p>
               <div style={{ height: '0.5px', background: 'var(--border)', marginBottom: 24 }} />
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
@@ -60,7 +62,7 @@ export default function Pricing() {
                   </li>
                 ))}
               </ul>
-              <a href={`/empezar?plan=${id}`} style={{
+              <a href="/empezar" style={{
                 display: 'block', textAlign: 'center',
                 padding: '11px', fontSize: 13, fontWeight: 500,
                 background: featured ? 'var(--text)' : 'transparent',
@@ -71,11 +73,15 @@ export default function Pricing() {
               }}
               onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
               onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
-                Empezar
+                Armar mi plan →
               </a>
             </div>
           ))}
         </div>
+
+        <p style={{ fontSize: 13, color: 'var(--text-3)', textAlign: 'center', marginTop: 32, fontWeight: 300 }}>
+          Estos son ejemplos. En el siguiente paso armas tu plan eligiendo exactamente las cajas que necesitas.
+        </p>
       </div>
     </section>
   )

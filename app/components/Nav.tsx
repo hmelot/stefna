@@ -24,23 +24,25 @@ export default function Nav() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         height: 60,
       }}>
-        <span style={{ fontFamily: 'var(--serif)', fontSize: 20, color: 'var(--text)', letterSpacing: '-0.02em' }}>
+        <a href="/" style={{ fontFamily: 'var(--serif)', fontSize: 20, color: 'var(--text)', letterSpacing: '-0.02em', textDecoration: 'none' }}>
           Stefna
-        </span>
+        </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-          {[
-            { label: 'Cómo funciona', href: '#como-funciona' },
-            { label: 'Qué incluye', href: '#que-incluye' },
-            { label: 'Precios', href: '#precios' },
-          ].map(({ label, href }) => (
-            <a key={href} href={href}
-              style={{ fontSize: 14, color: 'var(--text-2)', textDecoration: 'none', transition: 'color 0.2s' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}>
-              {label}
-            </a>
-          ))}
-          <a href="/empezar" style={{
+          <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+            {[
+              { label: 'Cómo funciona', href: '#como-funciona' },
+              { label: 'Qué incluye', href: '#que-incluye' },
+              { label: 'Precios', href: '#precios' },
+            ].map(({ label, href }) => (
+              <a key={href} href={href}
+                style={{ fontSize: 14, color: 'var(--text-2)', textDecoration: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}>
+                {label}
+              </a>
+            ))}
+          </div>
+          <a href="/empezar" className="nav-cta" style={{
             fontSize: 13, fontWeight: 500,
             padding: '8px 18px',
             background: 'var(--text)', color: 'var(--bg)',
@@ -49,7 +51,7 @@ export default function Nav() {
           }}
           onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
           onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
-            Empezar gratis
+            Empezar
           </a>
         </div>
       </div>

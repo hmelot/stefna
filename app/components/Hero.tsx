@@ -89,7 +89,7 @@ export default function Hero() {
         </div>
 
         {/* Social proof */}
-        <div style={{
+        <div className="hero-stats" style={{
           display: 'flex', gap: 40, justifyContent: 'center',
           marginTop: 72, paddingTop: 40,
           borderTop: '0.5px solid var(--border)',

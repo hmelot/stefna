@@ -7,18 +7,12 @@ export default function Footer() {
       borderTop: '0.5px solid var(--border)',
     }}>
       <div style={{ maxWidth: 1080, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: 48, alignItems: 'start', marginBottom: 56 }}>
+        <div className="footer-grid" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: 48, alignItems: 'start', marginBottom: 56 }}>
           <div>
             <p style={{ fontFamily: 'var(--serif)', fontSize: 28, marginBottom: 14, letterSpacing: '-0.02em', color: 'var(--text)' }}>Stefna</p>
             <p style={{ fontSize: 14, color: 'var(--text-2)', maxWidth: 280, lineHeight: 1.7, fontWeight: 300 }}>
               Presencia digital completa para negocios que quieren crecer sin complicarse.
             </p>
-            <a href="mailto:hmelot@gmail.com" style={{
-              display: 'inline-block', marginTop: 16, fontSize: 13, color: 'var(--accent)',
-              textDecoration: 'none', fontWeight: 400,
-            }}>
-              hmelot@gmail.com
-            </a>
           </div>
           {[
             { title: 'Producto', links: [
@@ -26,8 +20,8 @@ export default function Footer() {
               { label: 'Qué incluye', href: '#que-incluye' },
               { label: 'Precios', href: '#precios' },
             ]},
-            { title: 'Empresa', links: [
-              { label: 'Contacto', href: 'mailto:hmelot@gmail.com' },
+            { title: 'Empezar', links: [
+              { label: 'Armar mi plan', href: '/empezar' },
             ]},
             { title: 'Legal', links: [
               { label: 'Términos', href: '/terminos' },

@@ -1,0 +1,8 @@
+name = "stefna-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "stefna-db"
+database_id = "" # Will be filled after `wrangler d1 create stefna-db`

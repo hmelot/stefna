@@ -50,7 +50,7 @@ const faqSchema = {
     {
       '@type': 'Question',
       name: '¿Cuánto cuesta?',
-      acceptedAnswer: { '@type': 'Answer', text: 'Desde $49.000 CLP/mes (Arranque) hasta $249.000 CLP/mes (Total). El plan más popular es Completo a $149.000 con encargado de WhatsApp 24/7 incluido.' },
+      acceptedAnswer: { '@type': 'Answer', text: 'Desde $89.000 CLP/mes (Arranque) hasta $345.000 CLP/mes (Total). El plan más popular es Completo a $266.000 con encargado de WhatsApp 24/7 incluido. También puedes armar tu plan eligiendo solo las cajas que necesitas.' },
     },
   ],
 }

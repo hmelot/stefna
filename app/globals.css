@@ -54,3 +54,37 @@ body {
   padding-bottom: 8px;
 }
 .scroll-x::-webkit-scrollbar { display: none; }
+
+/* ── Responsive ── */
+
+/* Nav: hide links on mobile, show only logo + CTA */
+@media (max-width: 640px) {
+  .nav-links { display: none !important; }
+  .nav-cta { font-size: 12px !important; padding: 7px 14px !important; }
+}
+
+/* Footer: stack columns on mobile */
+@media (max-width: 768px) {
+  .footer-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 32px !important;
+  }
+}
+@media (max-width: 480px) {
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 28px !important;
+  }
+}
+
+/* Cases / HowItWorks / Pricing: single column on mobile */
+@media (max-width: 640px) {
+  .grid-responsive {
+    grid-template-columns: 1fr !important;
+  }
+  .hero-stats {
+    flex-direction: column !important;
+    gap: 20px !important;
+    align-items: center !important;
+  }
+}
