@@ -1,3 +1,4 @@
+'use client'
 const problems = [
   {
     title: 'No apareces cuando te buscan',
@@ -18,7 +19,7 @@ const problems = [
 
 export default function Problem() {
   return (
-    <section style={{ padding: '100px 24px', background: 'var(--bg)' }}>
+    <section id="problema" style={{ padding: '100px 24px', background: 'var(--bg)' }}>
       <div style={{ maxWidth: 1080, margin: '0 auto' }}>
         <div style={{ maxWidth: 580, marginBottom: 56 }}>
           <p style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 16 }}>

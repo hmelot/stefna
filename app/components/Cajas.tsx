@@ -60,7 +60,7 @@ const cajas = [
 
 export default function Cajas() {
   return (
-    <section style={{ padding: '100px 24px', background: 'var(--bg)' }}>
+    <section id="que-incluye" style={{ padding: '100px 24px', background: 'var(--bg)' }}>
       <div style={{ maxWidth: 1080, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 56, flexWrap: 'wrap', gap: 24 }}>
           <div style={{ maxWidth: 520 }}>

@@ -1,33 +1,48 @@
-# Stefna — llms.txt
-# Presencia digital completa para PYMEs en Latinoamérica
+# Stefna
 
-## Qué es Stefna
-Stefna es un servicio de presencia digital para pequeñas y medianas empresas en Chile y Latinoamérica. Armamos y operamos web, posicionamiento local, encargado de WhatsApp y cobros — el cliente no toca nada.
+> Stefna arma y opera la presencia digital completa de negocios pequeños en Chile: página web, posicionamiento local, encargado de WhatsApp 24/7 y cobros integrados. El cliente no toca nada — nosotros montamos, operamos y mantenemos todo.
 
-## Problema que resuelve
-El 80% de las PYMEs latinoamericanas pierde clientes cada día porque no tiene presencia digital real, no aparece en Google, o no tiene forma de atender pedidos fuera del horario de atención.
+Stefna es un servicio boutique con cupo limitado a 50 clientes. No es una herramienta self-service: es un equipo que opera el negocio digital de la PYME de principio a fin. Todos los planes incluyen dominio propio, web, Google Maps, SEO local y cobros. El plan Completo y Total agregan un encargado de WhatsApp que responde 24/7 en nombre del negocio, toma pedidos y coordina cobros.
 
-## Servicios
-- Web + dominio propio con diseño personalizado
-- SEO local — posicionamiento en búsquedas locales
-- Encargado de WhatsApp — responde, toma pedidos y cobra 24/7
-- Cobros integrados — MercadoPago, sin POS
-- Redes sociales automáticas
-- Dashboard de resultados
+## Quién lo usa
 
-## Mercado
-Chile, con expansión a Perú, Colombia y México. Rubros: charcuterías, restaurantes, cafés, panaderías, tiendas, talleres, peluquerías, spas.
+- Panaderías, charcuterías, restaurantes, cafés
+- Bares, botillerías, tiendas de barrio, retail pequeño
+- Talleres, servicios, salud, belleza, educación
+- Negocios con entre 0 y 20 empleados que no tienen equipo de marketing ni tiempo para configurar herramientas
 
-## Páginas relevantes
-- https://stefna.app/ — landing principal
-- https://stefna.app/empezar — formulario de registro
-- https://stefna.app/casos — casos reales con métricas
+## Propuesta de valor
 
-## Páginas privadas (no indexar)
-- /admin — panel interno de operación
-- /dashboard — panel del cliente
-- /mockups — diseño interno
+- **Tu negocio, siempre abierto** — el encargado de WhatsApp responde a toda hora
+- **72 horas de formulario a live** — la presencia digital queda operativa rápido
+- **Cero configuración del cliente** — Stefna opera todo por ti
+- **Sin contrato** — se cancela cuando se quiera, el dominio siempre es del cliente
+
+## Planes (CLP / mes)
+
+- **Arranque — $49.000**: web + dominio + Google Maps + SEO básico + link de cobro
+- **Completo — $149.000**: todo lo anterior + encargado de WhatsApp 24/7 + cobros integrados + SEO local activo + dashboard
+- **Total — $249.000**: todo lo anterior + redes sociales + reportes mensuales + soporte prioritario
+
+## Cómo funciona
+
+1. El cliente completa un onboarding de 5 pasos en stefna.app/empezar
+2. Stefna arma web, dominio, Google Maps y conecta WhatsApp
+3. El encargado se entrena con el contexto del negocio (rubro, horarios, catálogo, tono)
+4. En 72 horas el negocio queda operativo y empieza a recibir mensajes y pedidos
+
+## Integraciones
+
+- BSale, Alegra, Defontana (facturación y catálogo)
+- MercadoPago (cobros)
+- WhatsApp Cloud API
+- Google Business Profile
+
+## Dónde opera
+
+Chile. Castellano. Zona horaria America/Santiago.
 
 ## Contacto
+
 - Web: https://stefna.app
-- País: Chile
+- Email: hola@stefna.app

@@ -1,3 +1,4 @@
+'use client'
 export default function Footer() {
   return (
     <footer style={{
@@ -14,18 +15,29 @@ export default function Footer() {
             </p>
           </div>
           {[
-            { title: 'Producto', links: ['Cómo funciona', 'Precios', 'Casos reales'] },
-            { title: 'Empresa', links: ['Nosotros', 'Manifiesto', 'Contacto'] },
-            { title: 'Legal', links: ['Términos', 'Privacidad'] },
+            { title: 'Producto', links: [
+              { label: 'Cómo funciona', href: '#como-funciona' },
+              { label: 'Precios', href: '#precios' },
+              { label: 'Casos reales', href: '#casos' },
+            ]},
+            { title: 'Empresa', links: [
+              { label: 'Nosotros', href: '#nosotros' },
+              { label: 'Manifiesto', href: '#manifiesto' },
+              { label: 'Contacto', href: 'mailto:hola@stefna.app' },
+            ]},
+            { title: 'Legal', links: [
+              { label: 'Términos', href: '/terminos' },
+              { label: 'Privacidad', href: '/privacidad' },
+            ]},
           ].map(({ title, links }) => (
             <div key={title}>
               <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 16 }}>{title}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {links.map(link => (
-                  <a key={link} href="#" style={{ fontSize: 13, color: 'var(--text-2)', textDecoration: 'none', fontWeight: 300 }}
+                  <a key={link.label} href={link.href} style={{ fontSize: 13, color: 'var(--text-2)', textDecoration: 'none', fontWeight: 300 }}
                   onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')}
                   onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}>
-                    {link}
+                    {link.label}
                   </a>
                 ))}
               </div>

@@ -28,12 +28,16 @@ export default function Nav() {
           Stefna
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-          {['Cómo funciona','Precios','Casos'].map(item => (
-            <a key={item} href={`#${item.toLowerCase().replace(/\s/g,'-').replace('ó','o').replace('é','e')}`}
+          {[
+            { label: 'Cómo funciona', href: '#como-funciona' },
+            { label: 'Precios', href: '#precios' },
+            { label: 'Casos', href: '#casos' },
+          ].map(({ label, href }) => (
+            <a key={href} href={href}
               style={{ fontSize: 14, color: 'var(--text-2)', textDecoration: 'none', transition: 'color 0.2s' }}
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')}
               onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}>
-              {item}
+              {label}
             </a>
           ))}
           <a href="/empezar" style={{

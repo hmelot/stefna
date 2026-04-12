@@ -1,24 +1,5 @@
-const plans = [
-  {
-    name: 'Arranque',
-    price: '49.000',
-    desc: 'Para el negocio que quiere aparecer online por primera vez.',
-    items: ['Web + dominio propio', 'Google Maps y SEO básico', 'Link de cobro', 'Soporte por WhatsApp'],
-  },
-  {
-    name: 'Completo',
-    price: '149.000',
-    desc: 'Para el negocio que quiere crecer sin contratar a nadie.',
-    items: ['Todo de Arranque', 'Encargado de WhatsApp 24/7', 'Cobros integrados', 'SEO local activo', 'Dashboard de resultados'],
-    featured: true,
-  },
-  {
-    name: 'Total',
-    price: '249.000',
-    desc: 'Para el negocio que quiere dominar su mercado local.',
-    items: ['Todo de Completo', 'Redes sociales automáticas', 'Reportes mensuales', 'Soporte prioritario'],
-  },
-]
+'use client'
+import { PLANS } from '../lib/plans'
 
 export default function Pricing() {
   return (
@@ -41,8 +22,8 @@ export default function Pricing() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px,1fr))', gap: 12 }}>
-          {plans.map(({ name, price, desc, items, featured }) => (
-            <div key={name} style={{
+          {PLANS.map(({ id, name, price, description, items, featured }) => (
+            <div key={id} style={{
               background: featured ? 'var(--bg-3)' : 'var(--bg)',
               border: featured ? '1px solid rgba(255,255,255,0.15)' : '0.5px solid var(--border)',
               borderRadius: 16, padding: '32px 28px',
@@ -61,7 +42,7 @@ export default function Pricing() {
                 </p>
               )}
               <p style={{ fontSize: 14, fontWeight: 500, marginBottom: 6, marginTop: featured ? 12 : 0 }}>{name}</p>
-              <p style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 24, fontWeight: 300, lineHeight: 1.5 }}>{desc}</p>
+              <p style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 24, fontWeight: 300, lineHeight: 1.5 }}>{description}</p>
               <p style={{
                 fontFamily: 'var(--serif)',
                 fontSize: 38, fontWeight: 400, letterSpacing: '-0.03em',
@@ -79,7 +60,7 @@ export default function Pricing() {
                   </li>
                 ))}
               </ul>
-              <a href="/empezar" style={{
+              <a href={`/empezar?plan=${id}`} style={{
                 display: 'block', textAlign: 'center',
                 padding: '11px', fontSize: 13, fontWeight: 500,
                 background: featured ? 'var(--text)' : 'transparent',
