@@ -4,7 +4,6 @@ import Problem from './components/Problem'
 import HowItWorks from './components/HowItWorks'
 import Cajas from './components/Cajas'
 import Pricing from './components/Pricing'
-import Cases from './components/Cases'
 import FAQ from './components/FAQ'
 import Footer from './components/Footer'
 
@@ -17,7 +16,6 @@ export default function Home() {
       <HowItWorks />
       <Cajas />
       <Pricing />
-      <Cases />
       <FAQ />
       <Footer />
     </main>

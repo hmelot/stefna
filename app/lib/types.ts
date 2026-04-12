@@ -2,6 +2,8 @@
 
 export type PlanId = 'starter' | 'complete' | 'total'
 
+export type CajaId = 'web' | 'seo' | 'social' | 'whatsapp' | 'payments' | 'dashboard'
+
 export type Industry =
   | 'deli' | 'restaurant' | 'bakery' | 'bar' | 'retail'
   | 'beauty' | 'workshop' | 'services' | 'education' | 'other'

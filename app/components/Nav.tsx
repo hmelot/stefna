@@ -30,8 +30,8 @@ export default function Nav() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
           {[
             { label: 'Cómo funciona', href: '#como-funciona' },
+            { label: 'Qué incluye', href: '#que-incluye' },
             { label: 'Precios', href: '#precios' },
-            { label: 'Casos', href: '#casos' },
           ].map(({ label, href }) => (
             <a key={href} href={href}
               style={{ fontSize: 14, color: 'var(--text-2)', textDecoration: 'none', transition: 'color 0.2s' }}

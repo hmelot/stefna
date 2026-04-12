@@ -1,13 +1,11 @@
 'use client'
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import type { PlanId, Industry, WhatsappChannel } from '../lib/types'
-import { PLANS, getPlan, recommendedPlanFor } from '../lib/plans'
+import type { Industry, WhatsappChannel, CajaId } from '../lib/types'
+import { CAJAS, calcTotal, recommendedCajasFor, BASE_PRICE } from '../lib/cajas'
 import { INDUSTRIES, INDUSTRY_LABELS, WEEKDAYS, type Weekday } from '../lib/labels'
 import { isValidEmail, isValidPhone } from '../lib/validation'
-import { API_URL, ONBOARDING_STORAGE_KEY } from '../lib/constants'
-
-const VALID_PLAN_IDS = new Set<string>(PLANS.map(p => p.id))
+import { ONBOARDING_STORAGE_KEY } from '../lib/constants'
 
 // Suspense boundary required for useSearchParams with output: 'export'
 export default function EmpezarPage() {
@@ -31,7 +29,7 @@ type FormData = {
   closeTime: string
   days: Weekday[]
   delivery: boolean
-  plan: PlanId | ''
+  cajas: CajaId[]
 }
 
 const INITIAL: FormData = {
@@ -39,7 +37,7 @@ const INITIAL: FormData = {
   businessName: '', industry: '', city: 'Santiago', usesBSale: false,
   whatsappChannel: '', openTime: '09:00', closeTime: '20:00',
   days: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'], delivery: false,
-  plan: '',
+  cajas: ['web'], // web is always included
 }
 
 type SubmitState = 'idle' | 'submitting' | 'success' | 'error'
@@ -58,13 +56,6 @@ function Empezar() {
     } catch {
       // Corrupt draft — start fresh
     }
-
-    // Pre-fill plan from ?plan= query param (e.g. /empezar?plan=complete)
-    const planParam = searchParams.get('plan')
-    if (planParam && VALID_PLAN_IDS.has(planParam)) {
-      setData(prev => ({ ...prev, plan: planParam as PlanId }))
-    }
-
     hydrated.current = true
   }, [searchParams])
 
@@ -80,30 +71,42 @@ function Empezar() {
   const update = <K extends keyof FormData>(key: K, value: FormData[K]) =>
     setData(d => ({ ...d, [key]: value }))
 
+  const toggleCaja = (id: CajaId) => {
+    const caja = CAJAS.find(c => c.id === id)
+    if (!caja || caja.included) return // can't toggle base cajas
+    const has = data.cajas.includes(id)
+    update('cajas', has ? data.cajas.filter(c => c !== id) : [...data.cajas, id])
+  }
+
   const canAdvance = (): boolean => {
     if (step === 1) return !!data.name.trim() && isValidEmail(data.email) && isValidPhone(data.whatsappPhone)
     if (step === 2) return !!data.businessName.trim() && !!data.industry && !!data.city.trim()
     if (step === 3) return !!data.whatsappChannel && data.days.length > 0 && !!data.openTime && !!data.closeTime
-    if (step === 4) return !!data.plan
+    if (step === 4) return data.cajas.length >= 1
     return true
   }
 
-  const recommended: PlanId | null = data.industry ? recommendedPlanFor[data.industry] : null
+  const recommended: CajaId[] = data.industry ? recommendedCajasFor[data.industry] : []
+
+  // Pre-fill recommended cajas when arriving to step 4 for the first time
+  const prevStep = useRef(0)
+  useEffect(() => {
+    if (step === 4 && prevStep.current !== 4 && data.industry) {
+      const rec = recommendedCajasFor[data.industry]
+      // Only pre-fill if user hasn't already customized
+      if (data.cajas.length <= 1) {
+        update('cajas', rec)
+      }
+    }
+    prevStep.current = step
+  }, [step]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const finalize = async () => {
     setSubmitState('submitting')
-    try {
-      const response = await fetch(`${API_URL}/onboarding`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
-      setSubmitState('success')
-      try { localStorage.removeItem(ONBOARDING_STORAGE_KEY) } catch {}
-    } catch {
-      setSubmitState('error')
-    }
+    // TODO: POST to Worker when ready. For now, simulate success.
+    await new Promise(r => setTimeout(r, 1200))
+    setSubmitState('success')
+    try { localStorage.removeItem(ONBOARDING_STORAGE_KEY) } catch {}
   }
 
   const advanceDisabled = !canAdvance()
@@ -130,7 +133,7 @@ function Empezar() {
         </div>
       </div>
 
-      <section style={{ maxWidth: 560, margin: '0 auto', padding: '56px 24px 96px' }}>
+      <section style={{ maxWidth: 620, margin: '0 auto', padding: '56px 24px 96px' }}>
         {submitState === 'success' ? (
           <Success firstName={data.name.split(' ')[0] || ''} />
         ) : (
@@ -138,7 +141,7 @@ function Empezar() {
             {step === 1 && <Step1 data={data} update={update} />}
             {step === 2 && <Step2 data={data} update={update} />}
             {step === 3 && <Step3 data={data} update={update} />}
-            {step === 4 && <Step4 data={data} update={update} recommended={recommended} />}
+            {step === 4 && <Step4 data={data} toggleCaja={toggleCaja} recommended={recommended} />}
             {step === 5 && <Step5 data={data} />}
 
             {submitState === 'error' && (
@@ -189,13 +192,13 @@ function Empezar() {
                   disabled={submitState === 'submitting'}
                   style={{
                     padding: '12px 26px', fontSize: 14, fontWeight: 500, fontFamily: 'var(--sans)',
-                    background: 'var(--accent)', color: 'var(--bg)',
+                    background: 'var(--accent)', color: '#fff',
                     border: 'none', borderRadius: 10,
                     cursor: submitState === 'submitting' ? 'wait' : 'pointer',
                     opacity: submitState === 'submitting' ? 0.6 : 1,
                   }}
                 >
-                  {submitState === 'submitting' ? 'Enviando…' : 'Ir a pagar →'}
+                  {submitState === 'submitting' ? 'Enviando…' : 'Confirmar →'}
                 </button>
               )}
             </div>
@@ -394,66 +397,145 @@ function Step3({ data, update }: StepProps) {
   )
 }
 
-function Step4({ data, update, recommended }: StepProps & { recommended: PlanId | null }) {
+type Step4Props = {
+  data: FormData
+  toggleCaja: (id: CajaId) => void
+  recommended: CajaId[]
+}
+
+function Step4({ data, toggleCaja, recommended }: Step4Props) {
   const industryLabel = data.industry ? INDUSTRY_LABELS[data.industry].toLowerCase() : ''
+  const total = calcTotal(data.cajas)
+  const formatPrice = (n: number) => '$' + n.toLocaleString('es-CL')
+
   return (
     <>
       <StepHeader
-        k="04 · Plan"
-        title="Elige tu plan."
-        subtitle={recommended
-          ? `Para ${industryLabel} recomendamos el plan ${getPlan(recommended).name}.`
-          : 'Todos sin contrato. Cancelas cuando quieras.'}
+        k="04 · Arma tu plan"
+        title="¿Qué necesita tu negocio?"
+        subtitle={data.industry
+          ? `Para ${industryLabel} recomendamos estas cajas. Puedes agregar o quitar lo que quieras.`
+          : 'Selecciona las cajas que necesitas. Tu web siempre está incluida.'}
       />
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {PLANS.map(plan => {
-          const active = data.plan === plan.id
-          const isRecommended = recommended === plan.id
+        {CAJAS.map(caja => {
+          const active = data.cajas.includes(caja.id)
+          const isRecommended = recommended.includes(caja.id) && !caja.included
           return (
             <button
-              key={plan.id}
+              key={caja.id}
               type="button"
               aria-pressed={active}
-              onClick={() => update('plan', plan.id)}
+              onClick={() => toggleCaja(caja.id)}
+              disabled={caja.included}
               style={{
-                textAlign: 'left', padding: '20px 22px',
-                background: active ? 'var(--bg-3)' : 'var(--bg-2)',
-                border: `0.5px solid ${active ? 'var(--accent-border)' : 'var(--border)'}`,
-                borderRadius: 14, cursor: 'pointer', fontFamily: 'var(--sans)',
+                textAlign: 'left', padding: '18px 20px',
+                background: active ? 'rgba(74,138,74,0.06)' : 'var(--bg-2)',
+                border: active
+                  ? '1.5px solid var(--accent)'
+                  : '0.5px solid var(--border)',
+                borderRadius: 14,
+                cursor: caja.included ? 'default' : 'pointer',
+                fontFamily: 'var(--sans)',
                 position: 'relative', transition: 'all 0.15s',
+                opacity: caja.included ? 0.7 : 1,
               }}
             >
-              {isRecommended && (
-                <span style={{
-                  position: 'absolute', top: 14, right: 16, fontSize: 10, fontWeight: 500,
-                  color: 'var(--accent)', background: 'var(--accent-dim)',
-                  padding: '3px 10px', borderRadius: 20, letterSpacing: '0.06em', textTransform: 'uppercase',
-                  border: '0.5px solid var(--accent-border)',
-                }}>
-                  Recomendado
-                </span>
-              )}
-              <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', marginBottom: 4 }}>{plan.name}</p>
-              <p style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 300, marginBottom: 14 }}>{plan.description}</p>
-              <p style={{ fontFamily: 'var(--serif)', fontSize: 28, letterSpacing: '-0.02em' }}>
-                ${plan.price} <span style={{ fontFamily: 'var(--sans)', fontSize: 12, color: 'var(--text-3)' }}>CLP / mes</span>
-              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flex: 1 }}>
+                  {/* Checkbox visual */}
+                  <div style={{
+                    width: 22, height: 22, borderRadius: 6, flexShrink: 0, marginTop: 1,
+                    background: active ? 'var(--accent)' : 'transparent',
+                    border: active ? '1.5px solid var(--accent)' : '1.5px solid var(--border-hover)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.15s',
+                  }}>
+                    {active && <span style={{ color: '#fff', fontSize: 13, fontWeight: 700, lineHeight: 1 }}>✓</span>}
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{caja.name}</p>
+                      {caja.included && (
+                        <span style={{ fontSize: 10, color: 'var(--text-3)', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: 4, fontWeight: 500 }}>
+                          Incluida
+                        </span>
+                      )}
+                      {isRecommended && !active && (
+                        <span style={{ fontSize: 10, color: 'var(--accent)', background: 'var(--accent-dim)', padding: '2px 8px', borderRadius: 4, fontWeight: 500, border: '0.5px solid var(--accent-border)' }}>
+                          Recomendada
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 300, lineHeight: 1.5 }}>{caja.desc}</p>
+                    {active && !caja.included && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 10 }}>
+                        {caja.items.map(item => (
+                          <span key={item} style={{
+                            fontSize: 11, color: 'var(--text-2)', background: 'rgba(255,255,255,0.05)',
+                            padding: '3px 8px', borderRadius: 5,
+                          }}>
+                            ✓ {item}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 16 }}>
+                  {caja.price > 0 ? (
+                    <p style={{ fontFamily: 'var(--serif)', fontSize: 20, letterSpacing: '-0.02em', color: active ? 'var(--text)' : 'var(--text-2)' }}>
+                      {formatPrice(caja.price)}
+                    </p>
+                  ) : (
+                    <p style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 500 }}>
+                      {caja.included ? 'Base' : 'Gratis'}
+                    </p>
+                  )}
+                </div>
+              </div>
             </button>
           )
         })}
+      </div>
+
+      {/* Sticky total */}
+      <div style={{
+        position: 'sticky', bottom: 0,
+        marginTop: 24, padding: '18px 22px',
+        background: 'var(--bg-3)', border: '1px solid var(--border-hover)',
+        borderRadius: 14,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        backdropFilter: 'blur(12px)',
+      }}>
+        <div>
+          <p style={{ fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
+            Tu plan mensual
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--text-2)' }}>
+            Base {formatPrice(BASE_PRICE)} + {data.cajas.filter(c => !CAJAS.find(x => x.id === c)?.included).length} cajas
+          </p>
+        </div>
+        <p style={{ fontFamily: 'var(--serif)', fontSize: 32, letterSpacing: '-0.02em' }}>
+          {formatPrice(total)}
+        </p>
       </div>
     </>
   )
 }
 
 function Step5({ data }: { data: FormData }) {
-  const plan = data.plan ? getPlan(data.plan) : null
+  const total = calcTotal(data.cajas)
+  const formatPrice = (n: number) => '$' + n.toLocaleString('es-CL')
   const industryLabel = data.industry ? INDUSTRY_LABELS[data.industry] : '—'
   const channelLabel = data.whatsappChannel === 'existing' ? 'Ya tiene número' : data.whatsappChannel === 'new' ? 'Necesita nuevo' : '—'
+  const selectedCajas = CAJAS.filter(c => data.cajas.includes(c.id))
+
   return (
     <>
-      <StepHeader k="05 · Resumen" title="Todo listo." subtitle="Revisa los datos y confirma. Siguiente: pago seguro por MercadoPago." />
-      <div style={{ background: 'var(--bg-2)', border: '0.5px solid var(--border)', borderRadius: 14, padding: 24, marginBottom: 20 }}>
+      <StepHeader k="05 · Resumen" title="Todo listo." subtitle="Revisa los datos y confirma. Te contactamos por WhatsApp para coordinar." />
+      <div style={{ background: 'var(--bg-2)', border: '0.5px solid var(--border)', borderRadius: 14, padding: 24, marginBottom: 16 }}>
         <SummaryRow label="Titular" value={data.name} />
         <SummaryRow label="Email" value={data.email} />
         <SummaryRow label="WhatsApp" value={data.whatsappPhone} />
@@ -468,15 +550,27 @@ function Step5({ data }: { data: FormData }) {
         <SummaryRow label="Días" value={data.days.join(', ') || '—'} />
         <SummaryRow label="Delivery" value={data.delivery ? 'Sí' : 'No'} />
       </div>
-      {plan && (
-        <div style={{ background: 'var(--bg-3)', border: '0.5px solid var(--accent-border)', borderRadius: 14, padding: 24 }}>
-          <p style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 8 }}>Plan elegido</p>
-          <p style={{ fontSize: 16, fontWeight: 500, marginBottom: 4 }}>{plan.name}</p>
+
+      <div style={{ background: 'var(--bg-3)', border: '0.5px solid var(--accent-border)', borderRadius: 14, padding: 24 }}>
+        <p style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 14 }}>Tu plan</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+          {selectedCajas.map(caja => (
+            <div key={caja.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+              <span style={{ color: 'var(--text)' }}>✓ {caja.name}</span>
+              <span style={{ color: 'var(--text-3)' }}>
+                {caja.included ? 'Incluida' : caja.price > 0 ? formatPrice(caja.price) : 'Gratis'}
+              </span>
+            </div>
+          ))}
+        </div>
+        <Divider />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-2)' }}>Total mensual</p>
           <p style={{ fontFamily: 'var(--serif)', fontSize: 32, letterSpacing: '-0.02em' }}>
-            ${plan.price} <span style={{ fontFamily: 'var(--sans)', fontSize: 13, color: 'var(--text-3)' }}>CLP / mes</span>
+            {formatPrice(total)} <span style={{ fontFamily: 'var(--sans)', fontSize: 12, color: 'var(--text-3)' }}>CLP / mes</span>
           </p>
         </div>
-      )}
+      </div>
     </>
   )
 }
