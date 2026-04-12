@@ -1,0 +1,36 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /mockups
+Disallow: /dashboard
+Disallow: /api
+
+# Bots de IA — bienvenidos al contenido público
+User-agent: GPTBot
+Allow: /
+Disallow: /admin
+Disallow: /mockups
+Disallow: /dashboard
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin
+Disallow: /mockups
+Disallow: /dashboard
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin
+Disallow: /mockups
+Disallow: /dashboard
+
+User-agent: anthropic-ai
+Allow: /
+Disallow: /admin
+Disallow: /mockups
+Disallow: /dashboard
+
+User-agent: Googlebot
+Allow: /
+
+Sitemap: https://stefna.app/sitemap.xml

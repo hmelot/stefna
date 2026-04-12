@@ -1,0 +1,33 @@
+# Stefna — llms.txt
+# Presencia digital completa para PYMEs en Latinoamérica
+
+## Qué es Stefna
+Stefna es un servicio de presencia digital para pequeñas y medianas empresas en Chile y Latinoamérica. Armamos y operamos web, posicionamiento local, encargado de WhatsApp y cobros — el cliente no toca nada.
+
+## Problema que resuelve
+El 80% de las PYMEs latinoamericanas pierde clientes cada día porque no tiene presencia digital real, no aparece en Google, o no tiene forma de atender pedidos fuera del horario de atención.
+
+## Servicios
+- Web + dominio propio con diseño personalizado
+- SEO local — posicionamiento en búsquedas locales
+- Encargado de WhatsApp — responde, toma pedidos y cobra 24/7
+- Cobros integrados — MercadoPago, sin POS
+- Redes sociales automáticas
+- Dashboard de resultados
+
+## Mercado
+Chile, con expansión a Perú, Colombia y México. Rubros: charcuterías, restaurantes, cafés, panaderías, tiendas, talleres, peluquerías, spas.
+
+## Páginas relevantes
+- https://stefna.app/ — landing principal
+- https://stefna.app/empezar — formulario de registro
+- https://stefna.app/casos — casos reales con métricas
+
+## Páginas privadas (no indexar)
+- /admin — panel interno de operación
+- /dashboard — panel del cliente
+- /mockups — diseño interno
+
+## Contacto
+- Web: https://stefna.app
+- País: Chile
