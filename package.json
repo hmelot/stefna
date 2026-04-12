@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && cp -r public/mockups out/mockups",
+    "build": "next build && cp -r public/mockups out/mockups && cp public/robots.txt out/robots.txt && cp public/llms.txt out/llms.txt",
     "start": "next start"
   },
   "dependencies": {
