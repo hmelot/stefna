@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stefna — Identidad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --negro:#0a0a0a;--negro2:#111;--negro3:#1a1a1a;
+  --teal:#5DCAA5;--teal-dim:rgba(93,202,165,0.12);--teal-border:rgba(93,202,165,0.3);
+  --blanco:#fff;--crema:#f5f5f3;
+  --serif:'DM Serif Display',serif;--sans:'DM Sans',sans-serif;
+}
+body{background:var(--crema);font-family:var(--sans);-webkit-font-smoothing:antialiased;color:var(--negro)}
+.page{max-width:720px;margin:0 auto;padding:48px 24px}
+.section{margin-bottom:56px}
+.section-label{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:#aaa;margin-bottom:20px}
+
+/* LOGO */
+.logo-dark{background:var(--negro);border-radius:20px;padding:48px 40px;display:flex;flex-direction:column;align-items:center;gap:32px;margin-bottom:12px}
+.logo-word{font-family:var(--serif);font-size:56px;font-weight:400;color:var(--blanco);letter-spacing:-.04em;line-height:1}
+.logo-tag{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,0.25)}
+.logo-variants{display:flex;align-items:center;gap:32px}
+.logo-var{text-align:center}
+.logo-var p:first-child{font-family:var(--serif);font-size:28px;color:var(--blanco);letter-spacing:-.02em}
+.logo-var p:last-child{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-top:4px}
+.logo-divider{width:1px;height:48px;background:rgba(255,255,255,0.08)}
+.logo-icon{font-family:var(--serif);font-size:44px;color:var(--teal);letter-spacing:-.02em;line-height:1}
+.logo-light{background:#fff;border-radius:12px;padding:24px 32px;display:flex;align-items:center;justify-content:center;gap:40px;border:.5px solid rgba(0,0,0,0.06)}
+
+/* COLORES */
+.swatches{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.swatch{border-radius:12px;overflow:hidden}
+.swatch-color{height:72px}
+.swatch-info{padding:10px 12px;background:#fff;border:.5px solid rgba(0,0,0,0.06);border-top:none;border-radius:0 0 12px 12px}
+.swatch-name{font-size:12px;font-weight:500;color:var(--negro)}
+.swatch-hex{font-size:10px;color:#aaa;font-family:monospace;margin-top:1px}
+.swatch-use{font-size:10px;color:#bbb;margin-top:2px}
+
+/* TIPOGRAFÍA */
+.type-rows{display:flex;flex-direction:column;gap:0}
+.type-row{display:flex;align-items:center;padding:16px 0;border-bottom:.5px solid rgba(0,0,0,0.06)}
+.type-row:last-child{border-bottom:none}
+.type-sample{flex:1}
+.type-meta{font-size:10px;color:#bbb;font-family:monospace;text-align:right;min-width:160px}
+
+/* ALMA */
+.alma-wrap{background:var(--negro);border-radius:20px;overflow:hidden}
+.alma-header{padding:24px 24px 0;display:flex;align-items:flex-start;justify-content:space-between}
+.alma-name-wrap{}
+.alma-name{font-family:var(--serif);font-size:28px;color:var(--blanco);letter-spacing:-.02em}
+.alma-desc{font-size:12px;color:rgba(255,255,255,0.35);margin-top:4px;font-weight:300}
+.alma-badge{font-size:10px;padding:4px 12px;background:var(--teal-dim);border:.5px solid var(--teal-border);border-radius:20px;color:var(--teal);letter-spacing:.06em;text-transform:uppercase}
+.wa-frame{margin:20px 16px 16px;background:var(--negro2);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.wa-top{display:flex;align-items:center;gap:8px;margin-bottom:4px;padding-bottom:10px;border-bottom:.5px solid rgba(255,255,255,0.06)}
+.wa-avatar{width:28px;height:28px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:var(--negro);flex-shrink:0}
+.wa-title{font-size:13px;font-weight:500;color:var(--blanco)}
+.wa-sub{font-size:10px;color:var(--teal);margin-top:1px}
+.msg{display:flex;flex-direction:column;gap:2px}
+.bubble{padding:9px 12px;font-size:13px;line-height:1.5;max-width:88%}
+.b-in{background:rgba(255,255,255,0.07);border-radius:2px 10px 10px 10px;color:rgba(255,255,255,0.85)}
+.b-out{background:var(--teal);border-radius:10px 2px 10px 10px;color:var(--negro);align-self:flex-end}
+.msg-time{font-size:10px;color:rgba(255,255,255,0.2)}
+.msg-time-out{font-size:10px;color:rgba(255,255,255,0.2);text-align:right}
+
+/* TONO */
+.tone-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tone-card{background:#fff;border-radius:12px;padding:16px;border:.5px solid rgba(0,0,0,0.06)}
+.tone-head{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+.tone-item{font-size:13px;line-height:1.5;padding:5px 0;border-bottom:.5px solid rgba(0,0,0,0.04);color:var(--negro)}
+.tone-item:last-child{border-bottom:none}
+.tone-no .tone-item{text-decoration:line-through;color:#bbb}
+
+/* CORTE */
+.corte-steps{display:flex;flex-direction:column;gap:10px}
+.corte-step{background:#fff;border-radius:12px;padding:16px;border:.5px solid rgba(0,0,0,0.06);display:flex;gap:14px}
+.corte-num{font-family:var(--serif);font-size:22px;color:#e0e0e0;flex-shrink:0;line-height:1;margin-top:2px}
+.corte-title{font-size:12px;font-weight:500;color:var(--negro);margin-bottom:6px}
+.corte-msg{font-size:13px;color:#666;line-height:1.6;font-weight:300}
+.corte-step.warn .corte-num{color:#EF9F27}
+.corte-step.danger .corte-num{color:#E24B4A}
+
+/* MANIFIESTO */
+.manifiesto{background:var(--negro);border-radius:20px;padding:40px}
+.manifiesto p{font-family:var(--serif);font-size:17px;font-weight:400;color:rgba(255,255,255,0.85);line-height:1.75;margin-bottom:20px;letter-spacing:-.01em}
+.manifiesto p:last-child{margin-bottom:0;font-weight:400;color:var(--teal)}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- LOGO -->
+  <div class="section">
+    <p class="section-label">Logotipo</p>
+    <div class="logo-dark">
+      <div style="text-align:center">
+        <p class="logo-word">Stefna</p>
+        <p class="logo-tag">Rumbo digital para tu negocio</p>
+      </div>
+      <div class="logo-variants">
+        <div class="logo-var">
+          <p style="font-family:var(--serif);font-size:30px;color:#fff;letter-spacing:-.02em">Stefna</p>
+          <p style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-top:4px">horizontal</p>
+        </div>
+        <div class="logo-divider"></div>
+        <div class="logo-var">
+          <p class="logo-icon">S</p>
+          <p style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-top:4px">ícono</p>
+        </div>
+        <div class="logo-divider"></div>
+        <div class="logo-var">
+          <p style="font-family:var(--serif);font-size:20px;color:#fff;letter-spacing:-.02em">Stefna</p>
+          <p style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-top:4px">compacto</p>
+        </div>
+      </div>
+    </div>
+    <div class="logo-light">
+      <div style="text-align:center">
+        <p style="font-family:var(--serif);font-size:30px;color:var(--negro);letter-spacing:-.02em">Stefna</p>
+        <p style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#bbb;margin-top:4px">sobre claro</p>
+      </div>
+      <div style="width:1px;height:40px;background:#e0e0e0"></div>
+      <div style="text-align:center">
+        <p style="font-family:var(--serif);font-size:30px;color:var(--teal);letter-spacing:-.02em">Stefna</p>
+        <p style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#bbb;margin-top:4px">acento teal</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLORES -->
+  <div class="section">
+    <p class="section-label">Paleta</p>
+    <div class="swatches">
+      <div class="swatch">
+        <div class="swatch-color" style="background:#0a0a0a"></div>
+        <div class="swatch-info"><p class="swatch-name">Negro</p><p class="swatch-hex">#0a0a0a</p><p class="swatch-use">Fondo · base de todo</p></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#5DCAA5"></div>
+        <div class="swatch-info"><p class="swatch-name">Teal</p><p class="swatch-hex">#5DCAA5</p><p class="swatch-use">Acento único · nunca más de uno</p></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#fff;border:.5px solid #e8e8e8"></div>
+        <div class="swatch-info"><p class="swatch-name">Blanco</p><p class="swatch-hex">#ffffff</p><p class="swatch-use">Texto · superficies</p></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#111111"></div>
+        <div class="swatch-info"><p class="swatch-name">Negro 2</p><p class="swatch-hex">#111111</p><p class="swatch-use">Secciones alternas</p></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#1a1a1a"></div>
+        <div class="swatch-info"><p class="swatch-name">Negro 3</p><p class="swatch-hex">#1a1a1a</p><p class="swatch-use">Cards · elementos</p></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#f5f5f3;border:.5px solid #e8e8e8"></div>
+        <div class="swatch-info"><p class="swatch-name">Crema</p><p class="swatch-hex">#f5f5f3</p><p class="swatch-use">Dashboards · interfaces claras</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIPOGRAFÍA -->
+  <div class="section">
+    <p class="section-label">Tipografía</p>
+    <div style="background:#fff;border-radius:12px;padding:4px 20px;border:.5px solid rgba(0,0,0,0.06)">
+      <div class="type-row">
+        <div class="type-sample"><p style="font-family:var(--serif);font-size:40px;font-weight:400;letter-spacing:-.04em;color:var(--negro);line-height:1.1">Tu negocio,<br><em style="color:var(--teal)">en rumbo.</em></p></div>
+        <p class="type-meta">DM Serif Display<br>400 · Display · Italic</p>
+      </div>
+      <div class="type-row">
+        <div class="type-sample"><p style="font-size:20px;font-weight:500;color:var(--negro);letter-spacing:-.01em">Presencia digital completa.</p></div>
+        <p class="type-meta">DM Sans<br>500 · Títulos</p>
+      </div>
+      <div class="type-row">
+        <div class="type-sample"><p style="font-size:15px;font-weight:300;color:#666;line-height:1.65">Armamos tu web, tu canal de WhatsApp y tu forma de cobrar. Tú sigues haciendo lo que sabes hacer.</p></div>
+        <p class="type-meta">DM Sans<br>300 · Cuerpo</p>
+      </div>
+      <div class="type-row">
+        <div class="type-sample"><p style="font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:#aaa">Presencia digital · Chile · 2026</p></div>
+        <p class="type-meta">DM Sans<br>500 · Etiquetas</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALMA -->
+  <div class="section">
+    <p class="section-label">Alma — encargada de WhatsApp</p>
+    <div class="alma-wrap">
+      <div class="alma-header">
+        <div class="alma-name-wrap">
+          <p class="alma-name">Alma</p>
+          <p class="alma-desc">La encargada. Responde con la personalidad del negocio que representa.</p>
+        </div>
+        <span class="alma-badge">24/7</span>
+      </div>
+      <div class="wa-frame">
+        <div class="wa-top">
+          <div class="wa-avatar">A</div>
+          <div><p class="wa-title">Alma · La Charcutería</p><p class="wa-sub">En línea</p></div>
+        </div>
+        <div class="msg">
+          <div class="bubble b-in">Hola! tienen tabla de quesos para esta noche?</div>
+          <p class="msg-time">22:47</p>
+        </div>
+        <div class="msg">
+          <div class="bubble b-out">¡Hola! Claro que sí 🧀 Tabla gourmet $18.900 — quesos artesanales, jamón serrano y mermelada de frutos del bosque. ¿Para cuántas personas?</div>
+          <p class="msg-time-out">22:47</p>
+        </div>
+        <div class="msg">
+          <div class="bubble b-in">Para 4, perfecto. Cómo pago?</div>
+          <p class="msg-time">22:48</p>
+        </div>
+        <div class="msg">
+          <div class="bubble b-out">Aquí va el link de pago 👉 [link] · Cuando confirmes te tenemos todo listo. ¿Pasas a buscar o necesitas delivery?</div>
+          <p class="msg-time-out">22:48</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TONO -->
+  <div class="section">
+    <p class="section-label">Tono de voz</p>
+    <div class="tone-grid">
+      <div class="tone-card">
+        <p class="tone-head" style="color:#1D9E75">Decimos</p>
+        <p class="tone-item">"Tu negocio, en rumbo."</p>
+        <p class="tone-item">"Tú no tocas nada."</p>
+        <p class="tone-item">"Listo en 72 horas."</p>
+        <p class="tone-item">"Operado por nosotros."</p>
+      </div>
+      <div class="tone-card tone-no">
+        <p class="tone-head" style="color:#E24B4A">No decimos</p>
+        <p class="tone-item">"Solución de IA"</p>
+        <p class="tone-item">"Plataforma omnicanal"</p>
+        <p class="tone-item">"Agentes inteligentes"</p>
+        <p class="tone-item">"Transformación digital"</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CORTE -->
+  <div class="section">
+    <p class="section-label">Mensajes de corte por impago</p>
+    <div class="corte-steps">
+      <div class="corte-step">
+        <p class="corte-num">1</p>
+        <div><p class="corte-title">Día 1 — Recordatorio amable</p><p class="corte-msg">"Hola, te escribimos desde Stefna. Tu pago de este mes no llegó todavía — puede ser un error del sistema. Si quieres regularizarlo, aquí está el link: [link]."</p></div>
+      </div>
+      <div class="corte-step warn">
+        <p class="corte-num">5</p>
+        <div><p class="corte-title">Día 5 — Alma en modo silencioso</p><p class="corte-msg">"Hola, en este momento estamos haciendo mantención en tu cuenta. Tu encargado vuelve pronto. Para resolver esto rápido: [link de pago]."</p></div>
+      </div>
+      <div class="corte-step danger">
+        <p class="corte-num">15</p>
+        <div><p class="corte-title">Día 15 — Corte total</p><p class="corte-msg">"Este negocio está tomando un descanso. Si eres el dueño, escríbenos a hola@stefna.app."</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANIFIESTO -->
+  <div class="section">
+    <p class="section-label">Manifiesto</p>
+    <div class="manifiesto">
+      <p>Hay un carpintero que lleva décadas trabajando la misma madera. Que conoce cada veta, cada nudo, cada herramienta por su nombre. Que hace cosas que ninguna fábrica puede replicar.</p>
+      <p>Hay una panadera que amasa a las 4am. Un tallerista que arregla lo que otros botan. Una carnicera que sabe exactamente qué corte necesitas.</p>
+      <p>Los que no escalan. Los que no franquician. Los que hacen su oficio con cariño, con historia, con las manos.</p>
+      <p>El mundo cambió — y no está mal que haya cambiado. Está mal que ese cambio deje atrás a los que más merecen seguir.</p>
+      <p>Nosotros existimos para cerrar esa brecha. Armamos su presencia digital, su canal de WhatsApp, su forma de cobrar — y lo operamos por ellos. Para que sigan haciendo lo que saben hacer, mejor que nunca, con más cariño que antes.</p>
+      <p>Porque las herramientas más poderosas del mundo no deberían ser solo para los grandes.</p>
+      <p>Stefna significa rumbo en nórdico antiguo. Eso es lo que le damos a cada negocio: un rumbo claro en un mundo que no para de cambiar.</p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
