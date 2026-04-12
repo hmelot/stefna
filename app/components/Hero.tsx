@@ -24,21 +24,21 @@ export default function Hero() {
         position: 'absolute', top: '40%', left: '50%',
         transform: 'translate(-50%, -50%)',
         width: 600, height: 400,
-        background: 'radial-gradient(ellipse, rgba(93,202,165,0.06) 0%, transparent 70%)',
+        background: 'radial-gradient(ellipse, rgba(0,51,0,0.12) 0%, transparent 70%)',
         zIndex: 0,
       }} />
 
       <div style={{ position: 'relative', zIndex: 1, maxWidth: 760 }}>
         <p className="fade-up-1" style={{
           display: 'inline-block',
-          fontSize: 16, letterSpacing: '0.08em', textTransform: 'uppercase',
+          fontSize: 14, letterSpacing: '0.06em',
           color: 'var(--accent)', fontWeight: 500,
           border: '0.5px solid var(--accent-border)',
           background: 'var(--accent-dim)',
           padding: '8px 20px', borderRadius: 20,
           marginBottom: 32,
         }}>
-          Presencia digital para tu negocio
+          Para los que hacen su oficio con cariño
         </p>
 
         <h1 className="fade-up-2" style={{
@@ -57,11 +57,10 @@ export default function Hero() {
         <p className="fade-up-3" style={{
           fontSize: 22, color: 'var(--text-2)',
           lineHeight: 1.65, maxWidth: 560, margin: '0 auto 40px',
-          fontWeight: 500,
+          fontWeight: 300,
         }}>
-          Web, posicionamiento, encargado de WhatsApp y cobros.
-          Todo armado y operado por nosotros.
-          Tú no tocas nada.
+          Tú llevas años construyendo algo real.<br />
+          Nosotros ponemos lo que falta para que el mundo lo encuentre.
         </p>
 
         <div className="fade-up-4" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -74,7 +73,7 @@ export default function Hero() {
           }}
           onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
           onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
-            Arma mi presencia digital →
+            Quiero ponerme en rumbo →
           </a>
           <a href="#como-funciona" style={{
             fontSize: 15, padding: '13px 28px',
@@ -84,7 +83,7 @@ export default function Hero() {
           }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-hover)'; e.currentTarget.style.color = 'var(--text)' }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-2)' }}>
-            Ver cómo funciona
+            ¿Cómo funciona esto?
           </a>
         </div>
 
