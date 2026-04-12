@@ -31,11 +31,11 @@ export default function Hero() {
       <div style={{ position: 'relative', zIndex: 1, maxWidth: 760 }}>
         <p className="fade-up-1" style={{
           display: 'inline-block',
-          fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase',
+          fontSize: 16, letterSpacing: '0.08em', textTransform: 'uppercase',
           color: 'var(--accent)', fontWeight: 500,
           border: '0.5px solid var(--accent-border)',
           background: 'var(--accent-dim)',
-          padding: '5px 14px', borderRadius: 20,
+          padding: '8px 20px', borderRadius: 20,
           marginBottom: 32,
         }}>
           Presencia digital para tu negocio
