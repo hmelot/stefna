@@ -57,7 +57,7 @@ export default function Hero() {
         <p className="fade-up-3" style={{
           fontSize: 22, color: 'var(--text-2)',
           lineHeight: 1.65, maxWidth: 560, margin: '0 auto 40px',
-          fontWeight: 300,
+          fontWeight: 500,
         }}>
           Web, posicionamiento, encargado de WhatsApp y cobros.
           Todo armado y operado por nosotros.
