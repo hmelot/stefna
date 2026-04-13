@@ -1,5 +1,5 @@
-'use client'
 import { PLANS } from '../lib/plans'
+import { formatCLP } from '../lib/format'
 
 export default function Pricing() {
   return (
@@ -23,7 +23,7 @@ export default function Pricing() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px,1fr))', gap: 12 }}>
           {PLANS.map(({ id, name, price, description, items, featured }) => (
-            <div key={id} style={{
+            <div key={id} className="caja-card" style={{
               background: featured ? 'var(--bg-3)' : 'var(--bg)',
               border: featured ? '1px solid rgba(255,255,255,0.15)' : '0.5px solid var(--border)',
               borderRadius: 16, padding: '32px 28px',
@@ -39,7 +39,7 @@ export default function Pricing() {
                   textTransform: 'uppercase', whiteSpace: 'nowrap',
                 }}>
                   Más popular
-              </p>
+                </p>
               )}
               <p style={{ fontSize: 14, fontWeight: 500, marginBottom: 6, marginTop: featured ? 12 : 0 }}>{name}</p>
               <p style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 24, fontWeight: 300, lineHeight: 1.5 }}>{description}</p>
@@ -49,7 +49,7 @@ export default function Pricing() {
                   fontFamily: 'var(--serif)',
                   fontSize: 38, fontWeight: 400, letterSpacing: '-0.03em',
                 }}>
-                  ${price}
+                  {formatCLP(price)}
                 </p>
               </div>
               <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 28 }}>CLP / mes</p>
@@ -62,7 +62,7 @@ export default function Pricing() {
                   </li>
                 ))}
               </ul>
-              <a href="/empezar" style={{
+              <a href="/empezar" className="hover-link" style={{
                 display: 'block', textAlign: 'center',
                 padding: '11px', fontSize: 13, fontWeight: 500,
                 background: featured ? 'var(--text)' : 'transparent',
@@ -70,9 +70,7 @@ export default function Pricing() {
                 border: featured ? 'none' : '0.5px solid var(--border-hover)',
                 borderRadius: 8, textDecoration: 'none',
                 transition: 'opacity 0.2s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
-              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
+              }}>
                 Armar mi plan →
               </a>
             </div>

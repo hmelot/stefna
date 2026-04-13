@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
+/* Fonts loaded via next/font/google in layout.tsx — no render-blocking @import */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -54,6 +54,14 @@ body {
   padding-bottom: 8px;
 }
 .scroll-x::-webkit-scrollbar { display: none; }
+
+/* ── Hover effects (CSS instead of JS handlers) ── */
+.hover-link { transition: opacity 0.2s; }
+.hover-link:hover { opacity: 0.85; }
+.hover-text { transition: color 0.2s; }
+.hover-text:hover { color: var(--text) !important; }
+.caja-card { transition: border-color 0.2s; }
+.caja-card:hover { border-color: var(--border-hover); }
 
 /* ── Responsive ── */
 

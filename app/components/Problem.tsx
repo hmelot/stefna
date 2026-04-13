@@ -1,4 +1,3 @@
-'use client'
 const problems = [
   {
     title: 'No apareces cuando te buscan',
@@ -40,14 +39,11 @@ export default function Problem() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
           {problems.map(({ title, desc, icon }) => (
-            <div key={title} style={{
+            <div key={title} className="caja-card" style={{
               background: 'var(--bg-2)',
               border: '0.5px solid var(--border)',
               borderRadius: 16, padding: '28px 28px',
-              transition: 'border-color 0.2s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
+            }}>
               <div style={{
                 width: 36, height: 36, borderRadius: 10,
                 background: 'rgba(255,255,255,0.05)',

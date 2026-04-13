@@ -1,10 +1,9 @@
-import type { PlanId, Industry } from './types'
+import type { PlanId } from './types'
 
 export type Plan = {
   id: PlanId
   name: string
-  price: string
-  priceValue: number
+  price: number
   description: string
   items: string[]
   featured?: boolean
@@ -14,16 +13,14 @@ export const PLANS: Plan[] = [
   {
     id: 'starter',
     name: 'Arranque',
-    price: '89.000',
-    priceValue: 89_000,
+    price: 89_000,
     description: 'Para el negocio que quiere aparecer online por primera vez.',
     items: ['Web + dominio propio', 'Google Maps', 'Link de cobro', 'Soporte por WhatsApp'],
   },
   {
     id: 'complete',
     name: 'Completo',
-    price: '266.000',
-    priceValue: 266_000,
+    price: 266_000,
     description: 'Para el negocio que quiere crecer sin contratar a nadie.',
     items: ['Todo de Arranque', 'Encargado de WhatsApp 24/7', 'Cobros integrados', 'SEO local activo', 'Dashboard de resultados'],
     featured: true,
@@ -31,8 +28,7 @@ export const PLANS: Plan[] = [
   {
     id: 'total',
     name: 'Total',
-    price: '345.000',
-    priceValue: 345_000,
+    price: 345_000,
     description: 'Para el negocio que quiere dominar su mercado local.',
     items: ['Todo de Completo', 'Redes sociales automáticas', 'Reportes mensuales', 'Soporte prioritario'],
   },
@@ -44,15 +40,4 @@ export const getPlan = (id: PlanId): Plan => {
   return p
 }
 
-export const recommendedPlanFor: Record<Industry, PlanId> = {
-  deli: 'complete',
-  restaurant: 'complete',
-  bakery: 'complete',
-  bar: 'complete',
-  retail: 'complete',
-  beauty: 'starter',
-  workshop: 'starter',
-  services: 'starter',
-  education: 'starter',
-  other: 'complete',
-}
+// recommendedPlanFor removed — onboarding now uses cajas model (see lib/cajas.ts)

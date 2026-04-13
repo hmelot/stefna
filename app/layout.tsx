@@ -1,6 +1,10 @@
 import type { Metadata } from 'next'
+import { DM_Serif_Display, DM_Sans } from 'next/font/google'
 import './globals.css'
 import { safeJsonLd } from './lib/format'
+
+const dmSerif = DM_Serif_Display({ subsets: ['latin'], weight: '400', style: ['normal', 'italic'], display: 'swap', variable: '--serif' })
+const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500'], display: 'swap', variable: '--sans' })
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://stefna.app'),
@@ -70,7 +74,7 @@ const howToSchema = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" className={`${dmSerif.variable} ${dmSans.variable}`}>
       <head>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationSchema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqSchema) }} />

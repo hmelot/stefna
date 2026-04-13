@@ -91,7 +91,8 @@ function validate(body: OnboardingPayload): string | null {
 }
 
 function calcTotal(cajas: string[]): number {
-  return BASE_PRICE + cajas.reduce((sum, id) => sum + (CAJA_PRICES[id] || 0), 0)
+  // Only add prices for non-base cajas (web is included in BASE_PRICE)
+  return BASE_PRICE + cajas.filter(id => id !== 'web').reduce((sum, id) => sum + (CAJA_PRICES[id] || 0), 0)
 }
 
 export default {
@@ -126,19 +127,21 @@ export default {
       const monthlyTotal = calcTotal(body.cajas)
 
       try {
+        const email = body.email.trim().toLowerCase()
+
         // Check for duplicate email
-        const existing = await env.DB.prepare('SELECT id FROM clients WHERE email = ?').bind(body.email.trim().toLowerCase()).first()
+        const existing = await env.DB.prepare('SELECT id FROM clients WHERE email = ?').bind(email).first()
         if (existing) {
           return jsonResponse({ error: 'Este email ya tiene una cuenta registrada.' }, 409, origin)
         }
 
-        // Insert client
-        const result = await env.DB.prepare(`
+        // Insert client + activity log in a single batch (one round-trip)
+        const insertClient = env.DB.prepare(`
           INSERT INTO clients (name, email, whatsapp_phone, business_name, industry, city, uses_bsale, whatsapp_channel, open_time, close_time, days, delivery, cajas, monthly_total)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           body.name.trim(),
-          body.email.trim().toLowerCase(),
+          email,
           body.whatsappPhone.trim(),
           body.businessName.trim(),
           body.industry,
@@ -151,12 +154,13 @@ export default {
           body.delivery ? 1 : 0,
           JSON.stringify(body.cajas),
           monthlyTotal,
-        ).run()
+        )
 
-        const clientId = result.meta.last_row_id
+        const [clientResult] = await env.DB.batch([insertClient])
+        const clientId = clientResult.meta.last_row_id
 
-        // Log the signup
-        await env.DB.prepare(`
+        // Log signup (non-blocking — don't fail the response if this errors)
+        env.DB.prepare(`
           INSERT INTO activity_log (client_id, action, details) VALUES (?, 'signup', ?)
         `).bind(clientId, JSON.stringify({
           cajas: body.cajas,

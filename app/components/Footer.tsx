@@ -1,4 +1,3 @@
-'use client'
 export default function Footer() {
   return (
     <footer style={{
@@ -32,9 +31,7 @@ export default function Footer() {
               <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 16 }}>{title}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {links.map(link => (
-                  <a key={link.label} href={link.href} style={{ fontSize: 14, color: 'var(--text-2)', textDecoration: 'none', fontWeight: 300 }}
-                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')}
-                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}>
+                  <a key={link.label} href={link.href} className="hover-text" style={{ fontSize: 14, color: 'var(--text-2)', textDecoration: 'none', fontWeight: 300 }}>
                     {link.label}
                   </a>
                 ))}

@@ -1,19 +1,14 @@
 'use client'
-import { Suspense, useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 import type { Industry, WhatsappChannel, CajaId } from '../lib/types'
 import { CAJAS, calcTotal, recommendedCajasFor, BASE_PRICE } from '../lib/cajas'
 import { INDUSTRIES, INDUSTRY_LABELS, WEEKDAYS, type Weekday } from '../lib/labels'
+import { formatCLP } from '../lib/format'
 import { isValidEmail, isValidPhone } from '../lib/validation'
 import { API_URL, ONBOARDING_STORAGE_KEY } from '../lib/constants'
 
-// Suspense boundary required for useSearchParams with output: 'export'
 export default function EmpezarPage() {
-  return (
-    <Suspense>
-      <Empezar />
-    </Suspense>
-  )
+  return <Empezar />
 }
 
 type FormData = {
@@ -43,12 +38,13 @@ const INITIAL: FormData = {
 type SubmitState = 'idle' | 'submitting' | 'success' | 'error'
 
 function Empezar() {
-  const searchParams = useSearchParams()
   const [step, setStep] = useState(1)
   const [data, setData] = useState<FormData>(INITIAL)
   const [submitState, setSubmitState] = useState<SubmitState>('idle')
   const hydrated = useRef(false)
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Hydrate from localStorage on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(ONBOARDING_STORAGE_KEY)
@@ -57,15 +53,20 @@ function Empezar() {
       // Corrupt draft — start fresh
     }
     hydrated.current = true
-  }, [searchParams])
+  }, [])
 
+  // Debounced localStorage save (500ms after last change)
   useEffect(() => {
     if (!hydrated.current) return
-    try {
-      localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(data))
-    } catch {
-      // Quota or disabled storage — best effort only.
-    }
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => {
+      try {
+        localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(data))
+      } catch {
+        // Quota or disabled storage — best effort only.
+      }
+    }, 500)
+    return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
   }, [data])
 
   const update = <K extends keyof FormData>(key: K, value: FormData[K]) =>
@@ -88,18 +89,14 @@ function Empezar() {
 
   const recommended: CajaId[] = data.industry ? recommendedCajasFor[data.industry] : []
 
-  // Pre-fill recommended cajas when arriving to step 4 for the first time
-  const prevStep = useRef(0)
+  // Pre-fill recommended cajas when entering step 4 with uncustomized selection
+  const hasPrefilledCajas = useRef(false)
   useEffect(() => {
-    if (step === 4 && prevStep.current !== 4 && data.industry) {
-      const rec = recommendedCajasFor[data.industry]
-      // Only pre-fill if user hasn't already customized
-      if (data.cajas.length <= 1) {
-        update('cajas', rec)
-      }
+    if (step === 4 && !hasPrefilledCajas.current && data.industry && data.cajas.length <= 1) {
+      hasPrefilledCajas.current = true
+      update('cajas', recommendedCajasFor[data.industry])
     }
-    prevStep.current = step
-  }, [step]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [step, data.industry, data.cajas.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const finalize = async () => {
     setSubmitState('submitting')
@@ -417,7 +414,7 @@ type Step4Props = {
 function Step4({ data, toggleCaja, recommended }: Step4Props) {
   const industryLabel = data.industry ? INDUSTRY_LABELS[data.industry].toLowerCase() : ''
   const total = calcTotal(data.cajas)
-  const formatPrice = (n: number) => '$' + n.toLocaleString('es-CL')
+
 
   return (
     <>
@@ -497,7 +494,7 @@ function Step4({ data, toggleCaja, recommended }: Step4Props) {
                 <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 16 }}>
                   {caja.price > 0 ? (
                     <p style={{ fontFamily: 'var(--serif)', fontSize: 20, letterSpacing: '-0.02em', color: active ? 'var(--text)' : 'var(--text-2)' }}>
-                      {formatPrice(caja.price)}
+                      {formatCLP(caja.price)}
                     </p>
                   ) : (
                     <p style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 500 }}>
@@ -525,11 +522,11 @@ function Step4({ data, toggleCaja, recommended }: Step4Props) {
             Tu plan mensual
           </p>
           <p style={{ fontSize: 12, color: 'var(--text-2)' }}>
-            Base {formatPrice(BASE_PRICE)} + {data.cajas.filter(c => !CAJAS.find(x => x.id === c)?.included).length} cajas
+            Base {formatCLP(BASE_PRICE)} + {data.cajas.filter(c => !CAJAS.find(x => x.id === c)?.included).length} cajas
           </p>
         </div>
         <p style={{ fontFamily: 'var(--serif)', fontSize: 32, letterSpacing: '-0.02em' }}>
-          {formatPrice(total)}
+          {formatCLP(total)}
         </p>
       </div>
     </>
@@ -538,7 +535,7 @@ function Step4({ data, toggleCaja, recommended }: Step4Props) {
 
 function Step5({ data }: { data: FormData }) {
   const total = calcTotal(data.cajas)
-  const formatPrice = (n: number) => '$' + n.toLocaleString('es-CL')
+
   const industryLabel = data.industry ? INDUSTRY_LABELS[data.industry] : '—'
   const channelLabel = data.whatsappChannel === 'existing' ? 'Ya tiene número' : data.whatsappChannel === 'new' ? 'Necesita nuevo' : '—'
   const selectedCajas = CAJAS.filter(c => data.cajas.includes(c.id))
@@ -569,7 +566,7 @@ function Step5({ data }: { data: FormData }) {
             <div key={caja.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
               <span style={{ color: 'var(--text)' }}>✓ {caja.name}</span>
               <span style={{ color: 'var(--text-3)' }}>
-                {caja.included ? 'Incluida' : caja.price > 0 ? formatPrice(caja.price) : 'Gratis'}
+                {caja.included ? 'Incluida' : caja.price > 0 ? formatCLP(caja.price) : 'Gratis'}
               </span>
             </div>
           ))}
@@ -578,7 +575,7 @@ function Step5({ data }: { data: FormData }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 }}>
           <p style={{ fontSize: 13, color: 'var(--text-2)' }}>Total mensual</p>
           <p style={{ fontFamily: 'var(--serif)', fontSize: 32, letterSpacing: '-0.02em' }}>
-            {formatPrice(total)} <span style={{ fontFamily: 'var(--sans)', fontSize: 12, color: 'var(--text-3)' }}>CLP / mes</span>
+            {formatCLP(total)} <span style={{ fontFamily: 'var(--sans)', fontSize: 12, color: 'var(--text-3)' }}>CLP / mes</span>
           </p>
         </div>
       </div>

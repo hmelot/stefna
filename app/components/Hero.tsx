@@ -1,4 +1,3 @@
-'use client'
 export default function Hero() {
   return (
     <section style={{
@@ -65,25 +64,20 @@ export default function Hero() {
         </p>
 
         <div className="fade-up-4" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href="/empezar" style={{
+          <a href="/empezar" className="hover-link" style={{
             fontSize: 15, fontWeight: 500,
             padding: '13px 28px',
             background: 'var(--text)', color: 'var(--bg)',
             borderRadius: 10, textDecoration: 'none',
-            transition: 'opacity 0.2s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
-          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
+          }}>
             Quiero ponerme en rumbo →
           </a>
-          <a href="#como-funciona" style={{
+          <a href="#como-funciona" className="hover-text" style={{
             fontSize: 15, padding: '13px 28px',
             border: '0.5px solid var(--border-hover)', color: 'var(--text-2)',
             borderRadius: 10, textDecoration: 'none',
             transition: 'all 0.2s',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-hover)'; e.currentTarget.style.color = 'var(--text)' }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-2)' }}>
+          }}>
             ¿Cómo funciona esto?
           </a>
         </div>
