@@ -34,11 +34,11 @@ export default function Pricing() {
                 <p style={{
                   position: 'absolute', top: -1, left: '50%', transform: 'translateX(-50%)',
                   fontSize: 10, fontWeight: 500, letterSpacing: '0.08em',
-                  background: 'var(--text)', color: 'var(--bg)',
+                  background: 'var(--accent)', color: '#fff',
                   padding: '3px 14px', borderRadius: '0 0 8px 8px',
                   textTransform: 'uppercase', whiteSpace: 'nowrap',
                 }}>
-                  Más popular
+                  Recomendado
                 </p>
               )}
               <p style={{ fontSize: 14, fontWeight: 500, marginBottom: 6, marginTop: featured ? 12 : 0 }}>{name}</p>

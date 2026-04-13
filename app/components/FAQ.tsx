@@ -11,18 +11,18 @@ const faqs: FAQ[] = [
   { q: '¿Necesito saber de tecnología?', a: 'No. Nosotros configuramos todo. Tú solo respondes un formulario de 5 minutos y apruebas el resultado por WhatsApp.' },
   { q: '¿En cuánto tiempo está listo?', a: '72 horas desde que completas el formulario. A veces menos. Te avisamos por WhatsApp cuando puedas revisar.' },
   {
-    q: '¿El encargado de WhatsApp es un bot genérico?',
-    a: 'No. Está entrenado con tu negocio — tu menú, tus precios, tu zona de delivery, tu horario. Así se ve una conversación real:',
+    q: '¿Cómo funciona el asistente de WhatsApp?',
+    a: 'Es un asistente automatizado, entrenado exclusivamente con tu negocio — tu catálogo, tus precios, tu zona de delivery, tu horario. Responde como un experto de tu local. Así se ve una conversación real:',
     example: [
       { from: 'client', text: 'Hola, hacen delivery a Llanquihue?' },
       { from: 'encargado', text: 'Hola! Sí, hacemos delivery a Llanquihue. El envío tiene un costo de $3.000 y demora aprox 40 min. ¿Te muestro el menú del día?' },
-      { from: 'client', text: 'Dale, qué tienen?' },
-      { from: 'encargado', text: 'Hoy tenemos:\n· Tabla mixta (jamón serrano, queso brie, aceitunas) — $12.900\n· Sándwich de pastrami con mostaza — $7.500\n· Tabla de quesos premium — $15.900\n\n¿Quieres pedir algo? Te mando el link de pago al toque 🙌' },
+      { from: 'client', text: 'Quiero algo rico para una picada con amigos, qué me recomiendas?' },
+      { from: 'encargado', text: 'Para una picada te armo esto:\n\n· Tabla mixta — jamón serrano, queso brie, aceitunas kalamata, higos — $12.900\n· Tabla de quesos premium — gruyère, camembert, manchego con mermelada de higos — $15.900\n\nLas dos van con pan artesanal de la casa. Si quieren algo más contundente agrego el sándwich de pastrami ($7.500) que es nuestro hit.\n\n¿Armo el pedido? Te mando el link de pago en un toque.' },
     ],
   },
-  { q: '¿Qué pasa si quiero cancelar?', a: 'Sin compromisos. Cancelas cuando quieras desde tu panel. Tu dominio siempre es tuyo — te lo llevas.' },
+  { q: '¿Qué pasa si quiero cancelar?', a: 'Sin compromisos. Cancelas cuando quieras. Tu dominio siempre es tuyo — te lo llevas. Las cajas adicionales que contrataste (gestión de pedidos, cobros, panel) se desactivan a los 15 días. Puedes solicitar una copia de tus datos antes de eso.' },
   { q: '¿Funciona para mi tipo de negocio?', a: 'Funciona para charcuterías, restaurantes, cafés, tiendas, talleres, peluquerías, spas, y cualquier negocio que atiende clientes localmente.' },
-  { q: '¿Ya tengo BSale o un sistema de gestión, sirve?', a: 'Sí. Lo conectamos y tu catálogo queda configurado automáticamente — sin cargar nada manualmente.' },
+  { q: '¿Ya tengo BSale o un sistema de gestión, sirve?', a: 'Sí, y es una gran ventaja. Conectamos BSale y tu catálogo se sincroniza automáticamente — cambias un precio en BSale y tu web + WhatsApp se actualizan solos. Sin doble trabajo. También conectamos Alegra y Defontana.' },
 ]
 
 function WaMessage({ from, text }: { from: 'client' | 'encargado'; text: string }) {

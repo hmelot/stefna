@@ -44,7 +44,7 @@ export default function Cajas() {
                   padding: '3px 10px', borderRadius: '0 0 8px 8px',
                   textTransform: 'uppercase',
                 }}>
-                  El más pedido
+                  Recomendado
                 </p>
               )}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, marginTop: featured ? 12 : 0 }}>
@@ -79,7 +79,7 @@ export default function Cajas() {
         }}>
           <span style={{ fontSize: 16 }}>🔗</span>
           <p style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 300 }}>
-            ¿Ya usas BSale, Alegra u otro sistema? Lo conectamos y tu catálogo queda listo en minutos — sin cargar nada manualmente.
+            ¿Ya usas BSale, Alegra o Defontana? Lo conectamos y tu catálogo se sincroniza automáticamente. Cambias un precio y se actualiza en tu web y WhatsApp al instante.
           </p>
         </div>
       </div>
