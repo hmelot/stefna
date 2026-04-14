@@ -253,6 +253,155 @@ export default {
       return jsonResponse({ client, activityLog: logs }, 200, origin, ao)
     }
 
+    // ══════════════════════════════════════════
+    // AUTH — Magic Link
+    // ══════════════════════════════════════════
+
+    // ── POST /auth/send-link ── sends magic link email
+    if (url.pathname === '/auth/send-link' && request.method === 'POST') {
+      const ip = request.headers.get('CF-Connecting-IP') || 'unknown'
+      if (isRateLimited(ip)) {
+        return jsonResponse({ error: 'Demasiados intentos.' }, 429, origin, ao)
+      }
+
+      let body: { email: string }
+      try { body = await request.json() }
+      catch { return jsonResponse({ error: 'Invalid JSON' }, 400, origin, ao) }
+
+      const email = body.email?.trim().toLowerCase()
+      if (!email) return jsonResponse({ error: 'Email requerido' }, 422, origin, ao)
+
+      // Find client — always return success to prevent enumeration
+      const client = await env.DB.prepare('SELECT id, name FROM clients WHERE email = ?').bind(email).first<{ id: number; name: string }>()
+
+      if (client) {
+        // Generate token
+        const token = crypto.randomUUID() + '-' + crypto.randomUUID()
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 min
+
+        await env.DB.prepare('INSERT INTO magic_links (client_id, token, expires_at) VALUES (?, ?, ?)')
+          .bind(client.id, token, expiresAt).run()
+
+        // TODO: Send actual email when email service is configured.
+        // For now, log the link so admin can see it.
+        const link = `https://stefna.app/dashboard?token=${token}`
+        console.log(`[MAGIC LINK] ${client.name} (${email}) → ${link}`)
+
+        // Log for admin visibility
+        await env.DB.prepare('INSERT INTO activity_log (client_id, action, details) VALUES (?, ?, ?)')
+          .bind(client.id, 'magic_link_sent', JSON.stringify({ email, link })).run()
+      }
+
+      // Always return success (prevents email enumeration)
+      return jsonResponse({ ok: true, message: 'Si tu email está registrado, recibirás un link de acceso.' }, 200, origin, ao)
+    }
+
+    // ── POST /auth/verify ── verifies magic link token, creates session
+    if (url.pathname === '/auth/verify' && request.method === 'POST') {
+      let body: { token: string }
+      try { body = await request.json() }
+      catch { return jsonResponse({ error: 'Invalid JSON' }, 400, origin, ao) }
+
+      const token = body.token?.trim()
+      if (!token) return jsonResponse({ error: 'Token requerido' }, 422, origin, ao)
+
+      const link = await env.DB.prepare(
+        "SELECT id, client_id, expires_at, used FROM magic_links WHERE token = ?"
+      ).bind(token).first<{ id: number; client_id: number; expires_at: string; used: number }>()
+
+      if (!link || link.used || new Date(link.expires_at) < new Date()) {
+        return jsonResponse({ error: 'Link inválido o expirado. Solicita uno nuevo.' }, 401, origin, ao)
+      }
+
+      // Mark token as used
+      await env.DB.prepare('UPDATE magic_links SET used = 1 WHERE id = ?').bind(link.id).run()
+
+      // Create session (24h)
+      const sessionId = crypto.randomUUID()
+      const sessionExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      await env.DB.prepare('INSERT INTO sessions (id, client_id, expires_at) VALUES (?, ?, ?)')
+        .bind(sessionId, link.client_id, sessionExpiry).run()
+
+      // Get client info
+      const client = await env.DB.prepare('SELECT id, name, email, business_name FROM clients WHERE id = ?')
+        .bind(link.client_id).first()
+
+      return jsonResponse({ ok: true, sessionId, client }, 200, origin, ao)
+    }
+
+    // ── GET /auth/session ── checks if session is valid, returns client data
+    if (url.pathname === '/auth/session' && request.method === 'GET') {
+      const sessionId = request.headers.get('Authorization')?.replace('Bearer ', '')
+      if (!sessionId) return jsonResponse({ error: 'No session' }, 401, origin, ao)
+
+      const session = await env.DB.prepare(
+        "SELECT client_id, expires_at FROM sessions WHERE id = ?"
+      ).bind(sessionId).first<{ client_id: number; expires_at: string }>()
+
+      if (!session || new Date(session.expires_at) < new Date()) {
+        return jsonResponse({ error: 'Session expired' }, 401, origin, ao)
+      }
+
+      const client = await env.DB.prepare(
+        'SELECT id, name, email, business_name, industry, city, cajas, monthly_total, status, created_at FROM clients WHERE id = ?'
+      ).bind(session.client_id).first()
+
+      return jsonResponse({ ok: true, client }, 200, origin, ao)
+    }
+
+    // ══════════════════════════════════════════
+    // DASHBOARD DATA — Client-facing
+    // ══════════════════════════════════════════
+
+    // ── GET /dashboard/summary ── weekly summary for the logged-in client
+    if (url.pathname === '/dashboard/summary' && request.method === 'GET') {
+      const sessionId = request.headers.get('Authorization')?.replace('Bearer ', '')
+      if (!sessionId) return jsonResponse({ error: 'No session' }, 401, origin, ao)
+
+      const session = await env.DB.prepare("SELECT client_id FROM sessions WHERE id = ? AND expires_at > datetime('now')")
+        .bind(sessionId).first<{ client_id: number }>()
+      if (!session) return jsonResponse({ error: 'Session expired' }, 401, origin, ao)
+
+      const cid = session.client_id
+
+      // Get conversations this week
+      const convos = await env.DB.prepare(
+        "SELECT COUNT(*) as total, COALESCE(SUM(amount_generated), 0) as revenue FROM conversations WHERE client_id = ? AND created_at >= date('now', '-7 days')"
+      ).bind(cid).first<{ total: number; revenue: number }>()
+
+      // Get orders this week
+      const ordersResult = await env.DB.prepare(
+        "SELECT COUNT(*) as total, COALESCE(SUM(total), 0) as revenue FROM orders WHERE client_id = ? AND created_at >= date('now', '-7 days')"
+      ).bind(cid).first<{ total: number; revenue: number }>()
+
+      // Get page views this week
+      const views = await env.DB.prepare(
+        "SELECT COUNT(*) as total FROM page_views WHERE client_id = ? AND created_at >= date('now', '-7 days')"
+      ).bind(cid).first<{ total: number }>()
+
+      // Recent conversations
+      const recentConvos = await env.DB.prepare(
+        'SELECT id, wa_from, customer_name, summary, status, amount_generated, created_at FROM conversations WHERE client_id = ? ORDER BY created_at DESC LIMIT 10'
+      ).bind(cid).all()
+
+      // Recent orders
+      const recentOrders = await env.DB.prepare(
+        'SELECT id, customer_name, items, total, payment_status, order_status, created_at FROM orders WHERE client_id = ? ORDER BY created_at DESC LIMIT 10'
+      ).bind(cid).all()
+
+      return jsonResponse({
+        week: {
+          conversations: convos?.total ?? 0,
+          orders: ordersResult?.total ?? 0,
+          revenue: ordersResult?.revenue ?? 0,
+          revenueFormatted: formatCLP(ordersResult?.revenue ?? 0),
+          pageViews: views?.total ?? 0,
+        },
+        recentConversations: recentConvos.results,
+        recentOrders: recentOrders.results,
+      }, 200, origin, ao)
+    }
+
     return jsonResponse({ error: 'Not found' }, 404, origin, ao)
   },
 }

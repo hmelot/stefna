@@ -6,4 +6,5 @@ out/
 .env*.local
 .claude/
 .wrangler/
+.vercel/
 .DS_Store
