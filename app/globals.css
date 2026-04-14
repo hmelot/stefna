@@ -85,7 +85,7 @@ body {
   }
 }
 
-/* Cases / HowItWorks / Pricing: single column on mobile */
+/* Grids: single column on mobile */
 @media (max-width: 640px) {
   .grid-responsive {
     grid-template-columns: 1fr !important;
@@ -96,3 +96,24 @@ body {
     align-items: center !important;
   }
 }
+
+/* Cajas/Pricing/HowItWorks: scroll → stack on mobile */
+@media (max-width: 768px) {
+  .scroll-x {
+    grid-template-columns: 1fr !important;
+    overflow-x: visible !important;
+  }
+  /* Felipe Braun section: stack */
+  .felipe-grid {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+    padding: 32px 24px !important;
+  }
+  /* Rubro layout: stack cajas */
+  .rubro-cajas {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* All inline grids with repeat(auto-fit) already collapse gracefully.
+   Pricing cards minmax(280px, 1fr) handles most cases. */

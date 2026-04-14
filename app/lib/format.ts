@@ -13,4 +13,4 @@ export const statusColor = (s: Status): string => STATUS_COLORS[s]
 
 /** Escape JSON for safe embedding inside <script type="application/ld+json">. */
 export const safeJsonLd = (value: unknown): string =>
-  JSON.stringify(value).replace(/</g, '\\u003c')
+  JSON.stringify(value).replace(/[<>&\u2028\u2029]/g, c => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'))
