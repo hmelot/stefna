@@ -1,6 +1,5 @@
 import type { Caja } from '../lib/cajas'
-
-type WaMsg = { from: 'client' | 'encargado'; text: string }
+import WaBubble, { type WaMsg } from './WaBubble'
 
 type Props = {
   rubro: string
@@ -8,24 +7,6 @@ type Props = {
   description: string
   cajas: Caja[]
   conversation: WaMsg[]
-}
-
-function WaBubble({ from, text }: WaMsg) {
-  const isClient = from === 'client'
-  return (
-    <div style={{ display: 'flex', justifyContent: isClient ? 'flex-end' : 'flex-start', marginBottom: 6 }}>
-      <div style={{
-        maxWidth: '80%', padding: '10px 14px',
-        background: isClient ? 'rgba(74,138,74,0.15)' : 'var(--bg-2)',
-        border: `0.5px solid ${isClient ? 'var(--accent-border)' : 'var(--border)'}`,
-        borderRadius: isClient ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-        fontSize: 13, color: 'var(--text)', lineHeight: 1.5, fontWeight: 300,
-        whiteSpace: 'pre-line' as const,
-      }}>
-        {text}
-      </div>
-    </div>
-  )
 }
 
 export default function RubroLayout({ rubro, city, description, cajas, conversation }: Props) {
@@ -138,7 +119,7 @@ export default function RubroLayout({ rubro, city, description, cajas, conversat
           fontFamily: 'var(--serif)', fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
           fontWeight: 400, letterSpacing: '-0.02em', marginBottom: 16,
         }}>
-          ¿Tienes {rubro.toLowerCase().startsWith('un') ? '' : 'un'}{rubro.toLowerCase().startsWith('una') ? '' : 'a'} {rubro.toLowerCase()} en {city}?
+          Tu {rubro.toLowerCase()} en {city} merece ser encontrada.
         </h2>
         <p style={{ fontSize: 15, color: 'var(--text-2)', fontWeight: 300, marginBottom: 28 }}>
           En 72 horas tu negocio está online. Sin que configures nada.

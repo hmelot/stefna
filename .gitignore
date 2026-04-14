@@ -6,3 +6,4 @@ out/
 .env*.local
 .claude/
 .wrangler/
+.DS_Store

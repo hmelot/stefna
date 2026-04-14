@@ -48,8 +48,18 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT = 5 // max requests
 const RATE_WINDOW = 60_000 // per 60 seconds
 
+let rateLimitCallCount = 0
+
 function isRateLimited(ip: string): boolean {
   const now = Date.now()
+
+  // Prune expired entries every 50 calls to prevent unbounded growth
+  if (++rateLimitCallCount % 50 === 0) {
+    for (const [key, val] of rateLimitMap) {
+      if (now > val.resetAt) rateLimitMap.delete(key)
+    }
+  }
+
   const entry = rateLimitMap.get(ip)
   if (!entry || now > entry.resetAt) {
     rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW })
@@ -192,7 +202,7 @@ export default {
           monthlyTotal,
         )
 
-        const [clientResult] = await env.DB.batch([insertClient])
+        const clientResult = await insertClient.run()
         const clientId = clientResult.meta.last_row_id
 
         // Log signup — await to ensure audit trail

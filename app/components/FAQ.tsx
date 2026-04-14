@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import WaBubble from './WaBubble'
 
 type FAQ = {
   q: string
@@ -24,27 +25,6 @@ const faqs: FAQ[] = [
   { q: '¿Funciona para mi tipo de negocio?', a: 'Funciona para charcuterías, restaurantes, cafés, tiendas, talleres, peluquerías, spas, y cualquier negocio que atiende clientes localmente.' },
   { q: '¿Ya tengo BSale o un sistema de gestión, sirve?', a: 'Sí, y es una gran ventaja. Conectamos BSale y tu catálogo se sincroniza automáticamente — cambias un precio en BSale y tu web + WhatsApp se actualizan solos. Sin doble trabajo. También conectamos Alegra y Defontana.' },
 ]
-
-function WaMessage({ from, text }: { from: 'client' | 'encargado'; text: string }) {
-  const isClient = from === 'client'
-  return (
-    <div style={{
-      display: 'flex', justifyContent: isClient ? 'flex-end' : 'flex-start',
-      marginBottom: 6,
-    }}>
-      <div style={{
-        maxWidth: '80%', padding: '10px 14px',
-        background: isClient ? 'rgba(74,138,74,0.15)' : 'var(--bg-2)',
-        border: `0.5px solid ${isClient ? 'var(--accent-border)' : 'var(--border)'}`,
-        borderRadius: isClient ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-        fontSize: 13, color: 'var(--text)', lineHeight: 1.5, fontWeight: 300,
-        whiteSpace: 'pre-line',
-      }}>
-        {text}
-      </div>
-    </div>
-  )
-}
 
 export default function FAQ() {
   const [open, setOpen] = useState<number | null>(0)
@@ -100,7 +80,7 @@ export default function FAQ() {
                         Ejemplo real de conversación
                       </p>
                       {example.map((msg, j) => (
-                        <WaMessage key={j} from={msg.from} text={msg.text} />
+                        <WaBubble key={j} from={msg.from} text={msg.text} />
                       ))}
                     </div>
                   )}
