@@ -2,89 +2,27 @@
  * Stefna API Worker
  *
  * Handles:
- * - POST /onboarding — receives signup form data, stores in D1
- * - GET /health — status check
+ * - POST /onboarding — receives signup form data, stores in D1, sends notification
+ * - GET  /health — status check
+ * - GET  /admin/clients — list all clients (auth required)
+ * - GET  /admin/stats — MRR, client count, recent signups (auth required)
  *
  * Deployed to: stefna-api.hmelot.workers.dev
  */
 
 export interface Env {
   DB: D1Database
-  ENVIRONMENT?: string // 'production' | 'development'
+  ENVIRONMENT?: string       // 'production' | 'development'
+  ADMIN_KEY?: string         // Secret key for admin endpoints
+  NOTIFICATION_EMAIL?: string // Where to send signup notifications
 }
 
-// Allowed origins for CORS — localhost only in dev
+// ── CORS ──
+
 function getAllowedOrigins(env: Env): string[] {
   const origins = ['https://stefna.app', 'https://stefna.co']
   if (env.ENVIRONMENT !== 'production') origins.push('http://localhost:3000')
   return origins
-}
-
-const VALID_INDUSTRIES = [
-  'deli', 'restaurant', 'bakery', 'bar', 'retail',
-  'beauty', 'workshop', 'services', 'education', 'other',
-] as const
-
-const VALID_WA_CHANNELS = ['existing', 'new'] as const
-
-const VALID_CAJAS = ['web', 'seo', 'social', 'whatsapp', 'payments', 'dashboard'] as const
-
-// Caja prices — must match app/lib/cajas.ts
-const BASE_PRICE = 89_000
-const CAJA_PRICES: Record<string, number> = {
-  web: 0,
-  seo: 59_000,
-  whatsapp: 89_000,
-  social: 79_000,
-  payments: 29_000,
-  dashboard: 0,
-}
-
-// Max field lengths to prevent payload abuse
-const MAX_LEN = { name: 200, email: 254, phone: 20, businessName: 200, city: 100, time: 5 }
-
-// Simple IP-based rate limiter (in-memory, resets on Worker restart)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
-const RATE_LIMIT = 5 // max requests
-const RATE_WINDOW = 60_000 // per 60 seconds
-
-let rateLimitCallCount = 0
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now()
-
-  // Prune expired entries every 50 calls to prevent unbounded growth
-  if (++rateLimitCallCount % 50 === 0) {
-    for (const [key, val] of rateLimitMap) {
-      if (now > val.resetAt) rateLimitMap.delete(key)
-    }
-  }
-
-  const entry = rateLimitMap.get(ip)
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW })
-    return false
-  }
-  entry.count++
-  return entry.count > RATE_LIMIT
-}
-
-const PHONE_RE = /^\+?[\d\s\-()]{8,20}$/
-
-type OnboardingPayload = {
-  name: string
-  email: string
-  whatsappPhone: string
-  businessName: string
-  industry: string
-  city: string
-  usesBSale: boolean
-  whatsappChannel: string
-  openTime: string
-  closeTime: string
-  days: string[]
-  delivery: boolean
-  cajas: string[]
 }
 
 function corsHeaders(origin: string | null, allowedOrigins: string[]): HeadersInit {
@@ -92,19 +30,40 @@ function corsHeaders(origin: string | null, allowedOrigins: string[]): HeadersIn
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
   }
 }
 
-function jsonResponse(data: unknown, status: number, origin: string | null, allowedOrigins: string[]): Response {
+function jsonResponse(data: unknown, status: number, origin: string | null, ao: string[]): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
-      'Content-Type': 'application/json',
-      ...corsHeaders(origin, allowedOrigins),
-    },
+    headers: { 'Content-Type': 'application/json', ...corsHeaders(origin, ao) },
   })
+}
+
+// ── Validation ──
+
+const VALID_INDUSTRIES = [
+  'deli', 'restaurant', 'bakery', 'bar', 'retail',
+  'beauty', 'workshop', 'services', 'education', 'other',
+] as const
+
+const VALID_WA_CHANNELS = ['existing', 'new'] as const
+const VALID_CAJAS = ['web', 'seo', 'social', 'whatsapp', 'payments', 'dashboard'] as const
+
+// Caja prices — must match app/lib/cajas.ts (all cajas optional, no forced base)
+const CAJA_PRICES: Record<string, number> = {
+  web: 89_000, seo: 59_000, whatsapp: 89_000, social: 79_000, payments: 29_000, dashboard: 0,
+}
+
+const MAX_LEN = { name: 200, email: 254, phone: 20, businessName: 200, city: 100, time: 5 }
+const PHONE_RE = /^\+?[\d\s\-()]{8,20}$/
+
+type OnboardingPayload = {
+  name: string; email: string; whatsappPhone: string; businessName: string
+  industry: string; city: string; usesBSale: boolean; whatsappChannel: string
+  openTime: string; closeTime: string; days: string[]; delivery: boolean; cajas: string[]
 }
 
 function validate(body: OnboardingPayload): string | null {
@@ -123,115 +82,177 @@ function validate(body: OnboardingPayload): string | null {
 }
 
 function calcTotal(cajas: string[]): number {
-  return BASE_PRICE + cajas.filter(id => id !== 'web').reduce((sum, id) => sum + (CAJA_PRICES[id] || 0), 0)
+  return cajas.reduce((sum, id) => sum + (CAJA_PRICES[id] || 0), 0)
 }
+
+function formatCLP(n: number): string {
+  return '$' + n.toLocaleString('es-CL')
+}
+
+// ── Rate Limiting ──
+
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+const RATE_LIMIT = 5
+const RATE_WINDOW = 60_000
+let rateLimitCallCount = 0
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  if (++rateLimitCallCount % 50 === 0) {
+    for (const [key, val] of rateLimitMap) {
+      if (now > val.resetAt) rateLimitMap.delete(key)
+    }
+  }
+  const entry = rateLimitMap.get(ip)
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW })
+    return false
+  }
+  entry.count++
+  return entry.count > RATE_LIMIT
+}
+
+// ── Admin Auth ──
+
+function isAdmin(request: Request, env: Env): boolean {
+  const key = env.ADMIN_KEY
+  if (!key) return false
+  const auth = request.headers.get('Authorization')
+  return auth === `Bearer ${key}`
+}
+
+// ── Notification ──
+
+async function notifySignup(body: OnboardingPayload, monthlyTotal: number, clientId: number | bigint): Promise<void> {
+  // Send notification via console log for now.
+  // When email service is configured, this will send to NOTIFICATION_EMAIL.
+  // For now, the admin can check /admin/clients.
+  console.log(`[SIGNUP] #${clientId} | ${body.businessName} (${body.industry}) | ${body.name} | ${body.whatsappPhone} | ${body.city} | ${formatCLP(monthlyTotal)}/mes | cajas: ${body.cajas.join(',')}`)
+}
+
+// ── Routes ──
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
     const origin = request.headers.get('Origin')
-    const allowedOrigins = getAllowedOrigins(env)
+    const ao = getAllowedOrigins(env)
 
-    // Reject requests from disallowed origins on POST
-    if (request.method === 'POST' && origin && !allowedOrigins.includes(origin)) {
-      return jsonResponse({ error: 'Forbidden' }, 403, origin, allowedOrigins)
+    // Reject cross-origin POST from disallowed origins
+    if (request.method === 'POST' && origin && !ao.includes(origin)) {
+      return jsonResponse({ error: 'Forbidden' }, 403, origin, ao)
     }
 
     // CORS preflight
     if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: corsHeaders(origin, allowedOrigins) })
+      return new Response(null, { status: 204, headers: corsHeaders(origin, ao) })
     }
 
-    // Health check
+    // ── GET /health ──
     if (url.pathname === '/health' && request.method === 'GET') {
-      return jsonResponse({ status: 'ok', timestamp: new Date().toISOString() }, 200, origin, allowedOrigins)
+      return jsonResponse({ status: 'ok', timestamp: new Date().toISOString() }, 200, origin, ao)
     }
 
-    // Onboarding
+    // ── POST /onboarding ──
     if (url.pathname === '/onboarding' && request.method === 'POST') {
-      // Rate limiting
       const ip = request.headers.get('CF-Connecting-IP') || 'unknown'
       if (isRateLimited(ip)) {
-        return jsonResponse({ error: 'Demasiados intentos. Espera un momento.' }, 429, origin, allowedOrigins)
+        return jsonResponse({ error: 'Demasiados intentos. Espera un momento.' }, 429, origin, ao)
       }
 
       let body: OnboardingPayload
-      try {
-        body = await request.json()
-      } catch {
-        return jsonResponse({ error: 'Invalid JSON body' }, 400, origin, allowedOrigins)
-      }
+      try { body = await request.json() }
+      catch { return jsonResponse({ error: 'Invalid JSON body' }, 400, origin, ao) }
 
       const validationError = validate(body)
-      if (validationError) {
-        return jsonResponse({ error: validationError }, 422, origin, allowedOrigins)
-      }
+      if (validationError) return jsonResponse({ error: validationError }, 422, origin, ao)
 
       const monthlyTotal = calcTotal(body.cajas)
 
       try {
         const email = body.email.trim().toLowerCase()
 
-        // Check for duplicate — return generic success to prevent email enumeration
+        // Duplicate check — generic response to prevent enumeration
         const existing = await env.DB.prepare('SELECT id FROM clients WHERE email = ?').bind(email).first()
         if (existing) {
-          // Same response as success — don't reveal whether email exists
-          return jsonResponse({
-            ok: true,
-            message: 'Registro recibido. Te contactamos por WhatsApp pronto.',
-          }, 201, origin, allowedOrigins)
+          return jsonResponse({ ok: true, message: 'Registro recibido. Te contactamos por WhatsApp pronto.' }, 201, origin, ao)
         }
 
-        const insertClient = env.DB.prepare(`
+        const result = await env.DB.prepare(`
           INSERT INTO clients (name, email, whatsapp_phone, business_name, industry, city, uses_bsale, whatsapp_channel, open_time, close_time, days, delivery, cajas, monthly_total)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
-          body.name.trim().slice(0, MAX_LEN.name),
-          email,
+          body.name.trim().slice(0, MAX_LEN.name), email,
           body.whatsappPhone.trim().slice(0, MAX_LEN.phone),
           body.businessName.trim().slice(0, MAX_LEN.businessName),
-          body.industry,
-          body.city.trim().slice(0, MAX_LEN.city),
-          body.usesBSale ? 1 : 0,
-          body.whatsappChannel,
-          body.openTime.slice(0, MAX_LEN.time),
-          body.closeTime.slice(0, MAX_LEN.time),
-          body.days.slice(0, 7).join(','),
-          body.delivery ? 1 : 0,
-          JSON.stringify(body.cajas),
-          monthlyTotal,
-        )
+          body.industry, body.city.trim().slice(0, MAX_LEN.city),
+          body.usesBSale ? 1 : 0, body.whatsappChannel,
+          body.openTime.slice(0, MAX_LEN.time), body.closeTime.slice(0, MAX_LEN.time),
+          body.days.slice(0, 7).join(','), body.delivery ? 1 : 0,
+          JSON.stringify(body.cajas), monthlyTotal,
+        ).run()
 
-        const clientResult = await insertClient.run()
-        const clientId = clientResult.meta.last_row_id
+        const clientId = result.meta.last_row_id
 
-        // Log signup — await to ensure audit trail
+        // Audit log
         try {
-          await env.DB.prepare(`
-            INSERT INTO activity_log (client_id, action, details) VALUES (?, 'signup', ?)
-          `).bind(clientId, JSON.stringify({
-            cajas: body.cajas,
-            monthly_total: monthlyTotal,
-            source: origin || 'unknown',
-          })).run()
-        } catch (logErr) {
-          console.error('Activity log error:', logErr)
-        }
+          await env.DB.prepare('INSERT INTO activity_log (client_id, action, details) VALUES (?, ?, ?)')
+            .bind(clientId, 'signup', JSON.stringify({ cajas: body.cajas, monthly_total: monthlyTotal, source: origin || 'unknown' }))
+            .run()
+        } catch (e) { console.error('Activity log error:', e) }
 
-        return jsonResponse({
-          ok: true,
-          clientId,
-          monthlyTotal,
-          message: 'Registro recibido. Te contactamos por WhatsApp pronto.',
-        }, 201, origin, allowedOrigins)
+        // Notify (non-blocking)
+        notifySignup(body, monthlyTotal, clientId!)
 
+        return jsonResponse({ ok: true, clientId, monthlyTotal, message: 'Registro recibido. Te contactamos por WhatsApp pronto.' }, 201, origin, ao)
       } catch (err: any) {
         console.error('DB error:', err)
-        return jsonResponse({ error: 'Error interno. Intenta de nuevo.' }, 500, origin, allowedOrigins)
+        return jsonResponse({ error: 'Error interno. Intenta de nuevo.' }, 500, origin, ao)
       }
     }
 
-    // 404 for everything else
-    return jsonResponse({ error: 'Not found' }, 404, origin, allowedOrigins)
+    // ── GET /admin/clients ──
+    if (url.pathname === '/admin/clients' && request.method === 'GET') {
+      if (!isAdmin(request, env)) return jsonResponse({ error: 'Unauthorized' }, 401, origin, ao)
+
+      const { results } = await env.DB.prepare(
+        'SELECT id, name, email, whatsapp_phone, business_name, industry, city, cajas, monthly_total, status, payment_status, created_at FROM clients ORDER BY created_at DESC LIMIT 100'
+      ).all()
+
+      return jsonResponse({ clients: results }, 200, origin, ao)
+    }
+
+    // ── GET /admin/stats ──
+    if (url.pathname === '/admin/stats' && request.method === 'GET') {
+      if (!isAdmin(request, env)) return jsonResponse({ error: 'Unauthorized' }, 401, origin, ao)
+
+      const countResult = await env.DB.prepare('SELECT COUNT(*) as total FROM clients').first<{ total: number }>()
+      const mrrResult = await env.DB.prepare("SELECT COALESCE(SUM(monthly_total), 0) as mrr FROM clients WHERE status != 'cancelled'").first<{ mrr: number }>()
+      const recentResult = await env.DB.prepare('SELECT id, business_name, industry, city, monthly_total, created_at FROM clients ORDER BY created_at DESC LIMIT 5').all()
+      const todayResult = await env.DB.prepare("SELECT COUNT(*) as today FROM clients WHERE created_at >= date('now')").first<{ today: number }>()
+
+      return jsonResponse({
+        totalClients: countResult?.total ?? 0,
+        mrr: mrrResult?.mrr ?? 0,
+        mrrFormatted: formatCLP(mrrResult?.mrr ?? 0),
+        signupsToday: todayResult?.today ?? 0,
+        recentSignups: recentResult.results,
+      }, 200, origin, ao)
+    }
+
+    // ── GET /admin/client/:id ──
+    if (url.pathname.startsWith('/admin/client/') && request.method === 'GET') {
+      if (!isAdmin(request, env)) return jsonResponse({ error: 'Unauthorized' }, 401, origin, ao)
+
+      const id = url.pathname.split('/').pop()
+      const client = await env.DB.prepare('SELECT * FROM clients WHERE id = ?').bind(id).first()
+      if (!client) return jsonResponse({ error: 'Client not found' }, 404, origin, ao)
+
+      const { results: logs } = await env.DB.prepare('SELECT * FROM activity_log WHERE client_id = ? ORDER BY created_at DESC LIMIT 50').bind(id).all()
+
+      return jsonResponse({ client, activityLog: logs }, 200, origin, ao)
+    }
+
+    return jsonResponse({ error: 'Not found' }, 404, origin, ao)
   },
 }

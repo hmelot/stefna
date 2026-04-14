@@ -9,28 +9,29 @@ export type Plan = {
   featured?: boolean
 }
 
+// Example plans shown on landing — actual pricing is per-caja in /empezar
 export const PLANS: Plan[] = [
   {
     id: 'starter',
     name: 'Arranque',
-    price: 89_000,
+    price: 89_000, // web only
     description: 'Para el negocio que quiere aparecer online por primera vez.',
-    items: ['Web + dominio propio', 'Google Maps', 'Link de cobro', 'Soporte por WhatsApp'],
+    items: ['Web + dominio propio', 'Google Maps', 'Optimizada para móvil'],
   },
   {
     id: 'complete',
     name: 'Completo',
-    price: 266_000,
+    price: 266_000, // web + seo + whatsapp + payments
     description: 'Para el negocio que quiere crecer sin contratar a nadie.',
-    items: ['Todo de Arranque', 'Encargado de WhatsApp 24/7', 'Cobros integrados', 'SEO local activo', 'Dashboard de resultados'],
+    items: ['Web + dominio propio', 'Gestión de pedidos WhatsApp 24/7', 'Cobros integrados', 'SEO local activo'],
     featured: true,
   },
   {
     id: 'total',
     name: 'Total',
-    price: 345_000,
+    price: 345_000, // web + seo + whatsapp + social + payments
     description: 'Para el negocio que quiere dominar su mercado local.',
-    items: ['Todo de Completo', 'Redes sociales automáticas', 'Reportes mensuales', 'Soporte prioritario'],
+    items: ['Todo de Completo', 'Redes sociales automáticas', 'Panel de control', 'Soporte prioritario'],
   },
 ]
 

@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import type { Industry, WhatsappChannel, CajaId } from '../lib/types'
-import { CAJAS, calcTotal, recommendedCajasFor, BASE_PRICE } from '../lib/cajas'
+import { CAJAS, calcTotal, recommendedCajasFor } from '../lib/cajas'
 import { INDUSTRIES, INDUSTRY_LABELS, WEEKDAYS, type Weekday } from '../lib/labels'
 import { formatCLP } from '../lib/format'
 import { isValidEmail, isValidPhone } from '../lib/validation'
@@ -32,7 +32,7 @@ const INITIAL: FormData = {
   businessName: '', industry: '', city: 'Santiago', usesBSale: false,
   whatsappChannel: '', openTime: '09:00', closeTime: '20:00',
   days: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'], delivery: false,
-  cajas: ['web'], // web is always included
+  cajas: [], // populated by recommendations on step 4
 }
 
 type SubmitState = 'idle' | 'submitting' | 'success' | 'error'
@@ -73,8 +73,6 @@ function Empezar() {
     setData(d => ({ ...d, [key]: value }))
 
   const toggleCaja = (id: CajaId) => {
-    const caja = CAJAS.find(c => c.id === id)
-    if (!caja || caja.included) return // can't toggle base cajas
     const has = data.cajas.includes(id)
     update('cajas', has ? data.cajas.filter(c => c !== id) : [...data.cajas, id])
   }
@@ -92,7 +90,7 @@ function Empezar() {
   // Pre-fill recommended cajas when entering step 4 with uncustomized selection
   const hasPrefilledCajas = useRef(false)
   useEffect(() => {
-    if (step === 4 && !hasPrefilledCajas.current && data.industry && data.cajas.length <= 1) {
+    if (step === 4 && !hasPrefilledCajas.current && data.industry && data.cajas.length === 0) {
       hasPrefilledCajas.current = true
       update('cajas', recommendedCajasFor[data.industry])
     }
@@ -522,7 +520,7 @@ function Step4({ data, toggleCaja, recommended }: Step4Props) {
             Tu plan mensual
           </p>
           <p style={{ fontSize: 12, color: 'var(--text-2)' }}>
-            Base {formatCLP(BASE_PRICE)} + {data.cajas.filter(c => !CAJAS.find(x => x.id === c)?.included).length} cajas
+            {data.cajas.length} {data.cajas.length === 1 ? 'caja' : 'cajas'} seleccionadas
           </p>
         </div>
         <p style={{ fontFamily: 'var(--serif)', fontSize: 32, letterSpacing: '-0.02em' }}>

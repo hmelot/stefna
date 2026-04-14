@@ -20,9 +20,9 @@ export const CAJAS: Caja[] = [
     num: '01',
     name: 'Tu vitrina en internet',
     slug: 'Web',
-    desc: 'Landing profesional con dominio propio. Apareces en Google Maps desde el día uno.',
-    price: 0,
-    included: true,
+    desc: 'Landing profesional con dominio propio. Apareces en Google Maps desde el día uno. Si ya tienes web, no la necesitas.',
+    price: 89_000,
+    included: false,
     items: ['Dominio .com propio', 'Diseño personalizado', 'Ficha Google Maps', 'Optimizada para móvil'],
     accent: 'rgba(93,202,165,0.08)',
     accentBorder: 'rgba(93,202,165,0.2)',
@@ -90,8 +90,6 @@ export const CAJAS: Caja[] = [
   },
 ]
 
-export const BASE_PRICE = 89_000 // web + dominio + Google Maps
-
 export const getCaja = (id: CajaId): Caja => {
   const c = CAJAS.find(caja => caja.id === id)
   if (!c) throw new Error(`Unknown caja: ${id}`)
@@ -99,7 +97,7 @@ export const getCaja = (id: CajaId): Caja => {
 }
 
 export const calcTotal = (selected: CajaId[]): number => {
-  return BASE_PRICE + CAJAS.filter(c => selected.includes(c.id) && !c.included).reduce((sum, c) => sum + c.price, 0)
+  return CAJAS.filter(c => selected.includes(c.id)).reduce((sum, c) => sum + c.price, 0)
 }
 
 // What we recommend per industry — ordered by impact
