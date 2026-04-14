@@ -107,5 +107,24 @@ body {
   }
 }
 
-/* All inline grids with repeat(auto-fit) already collapse gracefully.
-   Pricing cards minmax(280px, 1fr) handles most cases. */
+/* Dashboard mockup: stack metrics and columns on mobile */
+@media (max-width: 640px) {
+  .dash-metrics { grid-template-columns: repeat(2, 1fr) !important; }
+  .dash-columns { grid-template-columns: 1fr !important; }
+}
+
+/* Before/After: stack on mobile */
+@media (max-width: 640px) {
+  .before-after { grid-template-columns: 1fr !important; }
+}
+
+/* Comparison table: scroll horizontally on mobile */
+@media (max-width: 640px) {
+  .comparison-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .comparison-wrap table { min-width: 600px; }
+}
+
+/* Social proof: stack metrics on mobile */
+@media (max-width: 640px) {
+  .proof-metrics { grid-template-columns: repeat(2, 1fr) !important; }
+}
