@@ -26,7 +26,7 @@ const organizationSchema = {
   '@type': 'Organization',
   name: 'Stefna',
   url: 'https://stefna.app',
-  logo: 'https://stefna.app/logo.png',
+  logo: 'https://stefna.app/logo.svg',
   description: 'Presencia digital completa para negocios pequeños en Chile: web, SEO local, encargado de WhatsApp 24/7 y cobros integrados, operados por Stefna.',
   areaServed: { '@type': 'Country', name: 'Chile' },
   sameAs: ['https://stefna.co'],

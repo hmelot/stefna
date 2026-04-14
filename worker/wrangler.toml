@@ -5,4 +5,4 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "stefna-db"
-database_id = "" # Will be filled after `wrangler d1 create stefna-db`
+database_id = "ff5d63cb-c204-47a9-bcf1-185c9fa66a69"
