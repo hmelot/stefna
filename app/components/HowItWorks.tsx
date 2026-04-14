@@ -38,10 +38,10 @@ export default function HowItWorks() {
                 background: who.startsWith('Nosotros') ? 'var(--accent)' : 'rgba(255,255,255,0.3)',
                 marginBottom: 20,
               }} />
-              <h3 style={{ fontSize: 15, fontWeight: 500, marginBottom: 10, letterSpacing: '-0.01em', lineHeight: 1.3 }}>{title}</h3>
-              <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, fontWeight: 300, marginBottom: 16 }}>{desc}</p>
+              <h3 style={{ fontSize: 17, fontWeight: 500, marginBottom: 10, letterSpacing: '-0.01em', lineHeight: 1.3 }}>{title}</h3>
+              <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.6, fontWeight: 300, marginBottom: 16 }}>{desc}</p>
               <p style={{
-                fontSize: 11, fontWeight: 500,
+                fontSize: 12, fontWeight: 500,
                 color: who.startsWith('Nosotros') ? 'var(--accent)' : 'var(--text-3)',
                 letterSpacing: '0.04em',
               }}>
