@@ -39,10 +39,42 @@ const orders = [
 ]
 
 const cajas = [
-  { name: 'Tu vitrina en internet', slug: 'Web', status: 'active' as const, detail: 'Uptime 99.8% · 284 visitas esta semana', accent: 'rgba(93,202,165,0.08)', accentBorder: 'rgba(93,202,165,0.2)' },
-  { name: 'Que te encuentren primero', slug: 'SEO', status: 'progress' as const, detail: 'Posición Google Maps: #4 · Día 18 de 30 (en proceso)', accent: 'rgba(93,165,202,0.08)', accentBorder: 'rgba(93,165,202,0.2)' },
-  { name: 'Gestión de pedidos WA', slug: 'WhatsApp', status: 'active' as const, detail: '63 conversaciones · 47 pedidos · Respuesta promedio: 8s', accent: 'rgba(93,202,120,0.08)', accentBorder: 'rgba(93,202,120,0.25)' },
-  { name: 'Cobros sin fricción', slug: 'Cobros', status: 'active' as const, detail: 'MercadoPago activo · $312K recaudados esta semana', accent: 'rgba(202,165,93,0.08)', accentBorder: 'rgba(202,165,93,0.2)' },
+  {
+    name: 'Tu vitrina en internet', slug: 'Web', status: 'active' as const,
+    detail: 'Uptime 99.8% · 284 visitas esta semana',
+    accent: 'rgba(93,202,165,0.08)', accentBorder: 'rgba(93,202,165,0.2)',
+    expanded: {
+      metrics: [{ label: 'Visitas hoy', value: '42' }, { label: 'Visitas semana', value: '284' }, { label: 'Uptime', value: '99.8%' }],
+      details: ['Dominio: lacharcuteria-pv.cl', 'Google Maps: verificado', 'Última actualización: hace 2 días', 'Velocidad móvil: 94/100'],
+    },
+  },
+  {
+    name: 'Que te encuentren primero', slug: 'SEO', status: 'progress' as const,
+    detail: 'Posición Google Maps: #4 · Día 18 de 30 (en proceso)',
+    accent: 'rgba(93,165,202,0.08)', accentBorder: 'rgba(93,165,202,0.2)',
+    expanded: {
+      metrics: [{ label: 'Posición Maps', value: '#4' }, { label: 'Progreso', value: '60%' }, { label: 'Reseñas', value: '12' }],
+      details: ['Keywords: "charcutería puerto varas", "delivery embutidos"', 'Google Business Profile: activo', 'Reseñas promedio: 4.8 estrellas', 'Estimado posición #1: ~12 días más'],
+    },
+  },
+  {
+    name: 'Gestión de pedidos WA', slug: 'WhatsApp', status: 'active' as const,
+    detail: '63 conversaciones · 47 pedidos · Respuesta promedio: 8s',
+    accent: 'rgba(93,202,120,0.08)', accentBorder: 'rgba(93,202,120,0.25)',
+    expanded: {
+      metrics: [{ label: 'Respuesta', value: '8s' }, { label: 'Resueltas', value: '95%' }, { label: 'Escaladas', value: '3' }],
+      details: ['Conversaciones hoy: 9', 'Pedidos cerrados hoy: 6', 'Catálogo: 14 productos activos', 'Última escalación: hace 3 días'],
+    },
+  },
+  {
+    name: 'Cobros sin fricción', slug: 'Cobros', status: 'active' as const,
+    detail: 'MercadoPago activo · $312K recaudados esta semana',
+    accent: 'rgba(202,165,93,0.08)', accentBorder: 'rgba(202,165,93,0.2)',
+    expanded: {
+      metrics: [{ label: 'Recaudado', value: '$312K' }, { label: 'Links enviados', value: '52' }, { label: 'Tasa pago', value: '90%' }],
+      details: ['MercadoPago: conectado', 'Último pago recibido: hace 1h', 'Pagos pendientes: 3 ($15.000)', 'Comisión MP: 3.49% + IVA'],
+    },
+  },
 ]
 
 const statusColor = { active: 'var(--accent)', progress: '#E0A85A', inactive: 'var(--text-3)' }
@@ -251,35 +283,60 @@ function TabPedidos() {
 }
 
 function TabCajas() {
+  const [open, setOpen] = useState<number | null>(null)
   return (
     <div>
-      <p style={{ fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 16 }}>Estado de tus cajas</p>
+      <p style={{ fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 16 }}>Estado de tus cajas · click para ver detalle</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {cajas.map((c, i) => (
-          <div key={i} style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '18px 20px', background: 'var(--bg-3)', border: '0.5px solid var(--border)', borderRadius: 12,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{
-                width: 10, height: 10, borderRadius: '50%',
-                background: statusColor[c.status],
-              }} />
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <p style={{ fontSize: 14, fontWeight: 500 }}>{c.name}</p>
-                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: c.accent, border: `0.5px solid ${c.accentBorder}`, color: 'var(--text-2)' }}>{c.slug}</span>
+          <div key={i}
+            onClick={() => setOpen(open === i ? null : i)}
+            style={{
+              padding: '18px 20px', background: 'var(--bg-3)',
+              border: open === i ? '1px solid var(--accent-border)' : '0.5px solid var(--border)',
+              borderRadius: 12, cursor: 'pointer', transition: 'border-color 0.15s',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: statusColor[c.status] }} />
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <p style={{ fontSize: 14, fontWeight: 500 }}>{c.name}</p>
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: c.accent, border: `0.5px solid ${c.accentBorder}`, color: 'var(--text-2)' }}>{c.slug}</span>
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--text-2)' }}>{c.detail}</p>
                 </div>
-                <p style={{ fontSize: 12, color: 'var(--text-2)' }}>{c.detail}</p>
               </div>
+              <span style={{
+                fontSize: 10, fontWeight: 500, padding: '3px 10px', borderRadius: 10,
+                color: statusColor[c.status],
+                background: c.status === 'active' ? 'rgba(74,138,74,0.1)' : 'rgba(224,168,90,0.1)',
+              }}>
+                {statusLabel[c.status]}
+              </span>
             </div>
-            <span style={{
-              fontSize: 10, fontWeight: 500, padding: '3px 10px', borderRadius: 10,
-              color: statusColor[c.status],
-              background: c.status === 'active' ? 'rgba(74,138,74,0.1)' : 'rgba(224,168,90,0.1)',
-            }}>
-              {statusLabel[c.status]}
-            </span>
+
+            {/* Expanded detail */}
+            {open === i && (
+              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '0.5px solid var(--border)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
+                  {c.expanded.metrics.map(m => (
+                    <div key={m.label} style={{ background: 'var(--bg)', borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
+                      <p style={{ fontFamily: 'var(--serif)', fontSize: 18, letterSpacing: '-0.02em' }}>{m.value}</p>
+                      <p style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>{m.label}</p>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {c.expanded.details.map(d => (
+                    <p key={d} style={{ fontSize: 11, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ color: 'var(--text-3)' }}>·</span> {d}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
