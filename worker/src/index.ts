@@ -64,6 +64,8 @@ type OnboardingPayload = {
   name: string; email: string; whatsappPhone: string; businessName: string
   industry: string; city: string; usesBSale: boolean; whatsappChannel: string
   openTime: string; closeTime: string; days: string[]; delivery: boolean; cajas: string[]
+  // Step 5 config (optional — some may be empty)
+  webTemplate?: string; catalogItems?: string; deliveryZones?: string; businessDescription?: string
 }
 
 function validate(body: OnboardingPayload): string | null {
@@ -123,11 +125,66 @@ function isAdmin(request: Request, env: Env): boolean {
 
 // ── Notification ──
 
+const INDUSTRY_LABELS: Record<string, string> = {
+  deli: 'Charcutería/Deli', restaurant: 'Restaurante/Café', bakery: 'Panadería/Pastelería',
+  bar: 'Bar/Botillería', retail: 'Tienda/Retail', beauty: 'Salud/Belleza',
+  workshop: 'Taller/Reparaciones', services: 'Servicios', education: 'Educación/Clases', other: 'Otro',
+}
+
+const CAJA_LABELS: Record<string, string> = {
+  web: 'Web + dominio', seo: 'SEO local', whatsapp: 'Gestión pedidos WA',
+  social: 'Redes sociales', payments: 'Cobros', dashboard: 'Panel de control',
+}
+
 async function notifySignup(body: OnboardingPayload, monthlyTotal: number, clientId: number | bigint): Promise<void> {
-  // Send notification via console log for now.
-  // When email service is configured, this will send to NOTIFICATION_EMAIL.
-  // For now, the admin can check /admin/clients.
   console.log(`[SIGNUP] #${clientId} | ${body.businessName} (${body.industry}) | ${body.name} | ${body.whatsappPhone} | ${body.city} | ${formatCLP(monthlyTotal)}/mes | cajas: ${body.cajas.join(',')}`)
+
+  // Send email via MailChannels (free for Cloudflare Workers, no API key needed)
+  try {
+    const cajasFormatted = body.cajas.map(c => `• ${CAJA_LABELS[c] || c} — ${formatCLP(CAJA_PRICES[c] || 0)}`).join('\n')
+    const rubroLabel = INDUSTRY_LABELS[body.industry] || body.industry
+
+    const emailBody = [
+      `🟢 NUEVO CLIENTE STEFNA`,
+      ``,
+      `Nombre: ${body.name}`,
+      `Email: ${body.email}`,
+      `WhatsApp: ${body.whatsappPhone}`,
+      ``,
+      `Negocio: ${body.businessName}`,
+      `Rubro: ${rubroLabel}`,
+      `Ciudad: ${body.city}`,
+      `BSale: ${body.usesBSale ? 'Sí' : 'No'}`,
+      ``,
+      `Canal WA: ${body.whatsappChannel === 'existing' ? 'Ya tiene número' : 'Necesita nuevo'}`,
+      `Horario: ${body.openTime} – ${body.closeTime}`,
+      `Días: ${body.days.join(', ')}`,
+      `Delivery: ${body.delivery ? 'Sí' : 'No'}`,
+      ``,
+      `CAJAS SELECCIONADAS:`,
+      cajasFormatted,
+      ``,
+      `TOTAL MENSUAL: ${formatCLP(monthlyTotal)}`,
+      ``,
+      `Ver en admin: https://stefna.app/admin`,
+    ].join('\n')
+
+    await fetch('https://api.mailchannels.net/tx/v1/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        personalizations: [{
+          to: [{ email: 'hmelot@gmail.com', name: 'Horacio Melo' }],
+        }],
+        from: { email: 'noreply@stefna.app', name: 'Stefna' },
+        subject: `🟢 Nuevo cliente: ${body.businessName} (${body.city}) — ${formatCLP(monthlyTotal)}/mes`,
+        content: [{ type: 'text/plain', value: emailBody }],
+      }),
+    })
+  } catch (e) {
+    // Non-blocking — signup still succeeds even if email fails
+    console.error('Email notification error:', e)
+  }
 }
 
 // ── Routes ──
@@ -194,10 +251,50 @@ export default {
 
         const clientId = result.meta.last_row_id
 
+        // Create agent config if whatsapp is selected
+        if (body.cajas.includes('whatsapp') && body.catalogItems?.trim()) {
+          const rubroLabel = INDUSTRY_LABELS[body.industry] || body.industry
+          const systemPrompt = [
+            `Eres el asistente digital de ${body.businessName.trim()}, ${body.businessDescription?.trim() || `una ${rubroLabel} en ${body.city.trim()}`}.`,
+            `Tu trabajo es atender clientes por WhatsApp de manera natural, cálida y profesional.`,
+            ``,
+            `Horario de atención: ${body.openTime} a ${body.closeTime}, ${body.days.join(', ')}.`,
+            body.delivery ? `Hacemos delivery a: ${body.deliveryZones?.trim() || 'zona local'}.` : 'No hacemos delivery por el momento.',
+            ``,
+            `CATÁLOGO:`,
+            body.catalogItems.trim(),
+            ``,
+            `REGLAS:`,
+            `- Responde en español, tono cálido y directo`,
+            `- Si preguntan precio, responde con el precio real del catálogo`,
+            `- Si quieren hacer un pedido, confirma: producto, cantidad, dirección (si delivery), hora`,
+            `- Si está fuera de horario, avisa cuándo vuelven a atender`,
+            `- Si no sabes algo, di "te confirmo en un momento" — no inventes`,
+            `- NUNCA menciones que eres un asistente automatizado o que usas tecnología`,
+            `- Recomienda productos cuando tenga sentido, como un experto del local`,
+          ].join('\n')
+
+          try {
+            await env.DB.prepare(`INSERT INTO agent_configs (client_id, system_prompt, catalog, delivery_zones, greeting) VALUES (?, ?, ?, ?, ?)`)
+              .bind(
+                clientId,
+                systemPrompt,
+                body.catalogItems.trim(),
+                body.deliveryZones?.trim() || null,
+                `¡Hola! Bienvenido a ${body.businessName.trim()}. ¿En qué te puedo ayudar?`
+              ).run()
+          } catch (e) { console.error('Agent config error:', e) }
+        }
+
         // Audit log
         try {
           await env.DB.prepare('INSERT INTO activity_log (client_id, action, details) VALUES (?, ?, ?)')
-            .bind(clientId, 'signup', JSON.stringify({ cajas: body.cajas, monthly_total: monthlyTotal, source: origin || 'unknown' }))
+            .bind(clientId, 'signup', JSON.stringify({
+              cajas: body.cajas, monthly_total: monthlyTotal,
+              web_template: body.webTemplate || null,
+              has_catalog: !!body.catalogItems?.trim(),
+              source: origin || 'unknown',
+            }))
             .run()
         } catch (e) { console.error('Activity log error:', e) }
 

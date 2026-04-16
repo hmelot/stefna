@@ -11,6 +11,8 @@ export default function EmpezarPage() {
   return <Empezar />
 }
 
+export type WebTemplate = 'minimal' | 'modern' | 'classic' | 'bold'
+
 type FormData = {
   name: string
   email: string
@@ -25,6 +27,11 @@ type FormData = {
   days: Weekday[]
   delivery: boolean
   cajas: CajaId[]
+  // Step 5: caja config
+  webTemplate: WebTemplate | ''
+  catalogItems: string // free-text: products/services + prices
+  deliveryZones: string // free-text: zones, radius, communes
+  businessDescription: string // for WA training + web copy
 }
 
 const INITIAL: FormData = {
@@ -33,7 +40,10 @@ const INITIAL: FormData = {
   whatsappChannel: '', openTime: '09:00', closeTime: '20:00',
   days: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'], delivery: false,
   cajas: [], // populated by recommendations on step 4
+  webTemplate: '', catalogItems: '', deliveryZones: '', businessDescription: '',
 }
+
+const TOTAL_STEPS = 6
 
 type SubmitState = 'idle' | 'submitting' | 'success' | 'error'
 
@@ -82,6 +92,12 @@ function Empezar() {
     if (step === 2) return !!data.businessName.trim() && !!data.industry && !!data.city.trim()
     if (step === 3) return !!data.whatsappChannel && data.days.length > 0 && !!data.openTime && !!data.closeTime
     if (step === 4) return data.cajas.length >= 1
+    if (step === 5) {
+      // Config step: require catalog if whatsapp selected, template if web selected
+      if (data.cajas.includes('whatsapp') && !data.catalogItems.trim()) return false
+      if (data.cajas.includes('web') && !data.webTemplate) return false
+      return true
+    }
     return true
   }
 
@@ -127,13 +143,13 @@ function Empezar() {
         <a href="/" style={{ fontFamily: 'var(--serif)', fontSize: 20, color: 'var(--text)', textDecoration: 'none', letterSpacing: '-0.02em' }}>
           Stefna
         </a>
-        <p style={{ fontSize: 12, color: 'var(--text-3)' }}>Paso {Math.min(step, 5)} de 5</p>
+        <p style={{ fontSize: 12, color: 'var(--text-3)' }}>Paso {Math.min(step, TOTAL_STEPS)} de {TOTAL_STEPS}</p>
       </header>
 
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 24px' }}>
         <div style={{ height: 2, background: 'var(--border)', marginTop: 16, borderRadius: 2, overflow: 'hidden' }}>
           <div style={{
-            height: '100%', width: `${(Math.min(step, 5) / 5) * 100}%`,
+            height: '100%', width: `${(Math.min(step, TOTAL_STEPS) / TOTAL_STEPS) * 100}%`,
             background: 'var(--accent)', transition: 'width 0.4s ease',
           }} />
         </div>
@@ -148,7 +164,8 @@ function Empezar() {
             {step === 2 && <Step2 data={data} update={update} />}
             {step === 3 && <Step3 data={data} update={update} />}
             {step === 4 && <Step4 data={data} toggleCaja={toggleCaja} recommended={recommended} />}
-            {step === 5 && <Step5 data={data} />}
+            {step === 5 && <Step5Config data={data} update={update} />}
+            {step === 6 && <Step6Summary data={data} />}
 
             {submitState === 'error' && (
               <p style={{
@@ -175,7 +192,7 @@ function Empezar() {
               >
                 ← Atrás
               </button>
-              {step < 5 ? (
+              {step < TOTAL_STEPS ? (
                 <button
                   type="button"
                   onClick={() => !advanceDisabled && setStep(s => s + 1)}
@@ -531,7 +548,116 @@ function Step4({ data, toggleCaja, recommended }: Step4Props) {
   )
 }
 
-function Step5({ data }: { data: FormData }) {
+// ── Step 5: Configure selected cajas ──
+
+const WEB_TEMPLATES: { id: WebTemplate; name: string; desc: string }[] = [
+  { id: 'minimal', name: 'Minimal', desc: 'Fondo limpio, tipografía grande, una sola columna. Para negocios que quieren algo elegante y simple.' },
+  { id: 'modern', name: 'Moderno', desc: 'Grid dinámico con fotos grandes y colores vivos. Para negocios con buenas fotos de productos.' },
+  { id: 'classic', name: 'Clásico', desc: 'Layout tradicional con barra lateral. Para negocios con mucha información y categorías.' },
+  { id: 'bold', name: 'Impacto', desc: 'Textos enormes, contrastes fuertes. Para negocios que quieren destacar de inmediato.' },
+]
+
+function Step5Config({ data, update }: StepProps) {
+  const hasWeb = data.cajas.includes('web')
+  const hasWA = data.cajas.includes('whatsapp')
+  const hasPayments = data.cajas.includes('payments')
+
+  return (
+    <>
+      <StepHeader
+        k="05 · Personaliza"
+        title="Configura tus cajas."
+        subtitle="Con esta info armamos todo sin preguntarte más. Mientras más detalle nos des, mejor queda."
+      />
+
+      {/* Web template picker */}
+      {hasWeb && (
+        <div style={{ marginBottom: 32 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Estilo de tu web</p>
+          <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 16, fontWeight: 300 }}>Elige el estilo que más te represente. Después la personalizamos con tu marca.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+            {WEB_TEMPLATES.map(t => {
+              const active = data.webTemplate === t.id
+              return (
+                <button
+                  key={t.id} type="button" aria-pressed={active}
+                  onClick={() => update('webTemplate', t.id)}
+                  style={{
+                    textAlign: 'left', padding: '16px',
+                    background: active ? 'rgba(74,138,74,0.08)' : 'var(--bg-2)',
+                    border: active ? '1.5px solid var(--accent)' : '0.5px solid var(--border)',
+                    borderRadius: 12, cursor: 'pointer', fontFamily: 'var(--sans)',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <p style={{ fontSize: 14, fontWeight: 600, color: active ? 'var(--accent)' : 'var(--text)', marginBottom: 4 }}>{t.name}</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 300, lineHeight: 1.5 }}>{t.desc}</p>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Business description — always shown */}
+      <Field id="businessDescription" label="Describe tu negocio en una frase (para tu web y WhatsApp)">
+        <textarea
+          id="businessDescription"
+          style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }}
+          value={data.businessDescription}
+          onChange={e => update('businessDescription', e.target.value)}
+          placeholder="Ej: Charcutería artesanal en Puerto Varas. Tablas, quesos importados, delivery a domicilio."
+        />
+      </Field>
+
+      {/* Catalog / products — shown if WA or web selected */}
+      {(hasWA || hasWeb) && (
+        <Field id="catalogItems" label={hasWA ? 'Tu catálogo (productos o servicios con precios)' : 'Productos o servicios principales'}>
+          <textarea
+            id="catalogItems"
+            style={{ ...inputStyle, minHeight: 140, resize: 'vertical' }}
+            value={data.catalogItems}
+            onChange={e => update('catalogItems', e.target.value)}
+            placeholder={'Ej:\nTabla mixta — $12.900\nTabla de quesos premium — $15.900\nSándwich de pastrami — $7.500\nDelivery a Llanquihue — $3.000\n\nPon todo lo que vendes con precios. Esto entrena al asistente de WhatsApp para que responda como un experto.'}
+          />
+          <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6, fontWeight: 300 }}>
+            {hasWA ? 'Con esto entrenamos al asistente para que sepa exactamente qué vendes y a qué precio.' : 'Esto aparece en tu web.'}
+            {data.usesBSale && ' Si usas BSale, lo sincronizamos automáticamente después — pero déjanos algo para empezar.'}
+          </p>
+        </Field>
+      )}
+
+      {/* Delivery zones — shown if delivery is enabled */}
+      {data.delivery && (
+        <Field id="deliveryZones" label="¿A dónde haces delivery?">
+          <textarea
+            id="deliveryZones"
+            style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }}
+            value={data.deliveryZones}
+            onChange={e => update('deliveryZones', e.target.value)}
+            placeholder="Ej: Puerto Varas, Llanquihue, Puerto Montt (zona sur). Delivery gratis sobre $20.000."
+          />
+        </Field>
+      )}
+
+      {/* Payments info */}
+      {hasPayments && (
+        <div style={{
+          padding: 16, background: 'var(--bg-2)', border: '0.5px solid var(--border)',
+          borderRadius: 12, marginBottom: 20,
+        }}>
+          <p style={{ fontSize: 13, color: 'var(--text)', marginBottom: 4 }}>💳 Cobros</p>
+          <p style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 300, lineHeight: 1.5 }}>
+            Te vamos a conectar MercadoPago para que tus clientes paguen por link de WhatsApp.
+            Nosotros configuramos todo — solo necesitamos tu cuenta de MercadoPago (si no tienes, te ayudamos a crearla).
+          </p>
+        </div>
+      )}
+    </>
+  )
+}
+
+function Step6Summary({ data }: { data: FormData }) {
   const total = calcTotal(data.cajas)
 
   const industryLabel = data.industry ? INDUSTRY_LABELS[data.industry] : '—'
@@ -540,7 +666,7 @@ function Step5({ data }: { data: FormData }) {
 
   return (
     <>
-      <StepHeader k="05 · Resumen" title="Todo listo." subtitle="Revisa los datos y confirma. Te contactamos por WhatsApp para coordinar." />
+      <StepHeader k="06 · Resumen" title="Todo listo." subtitle="Revisa los datos y confirma. Te contactamos por WhatsApp para coordinar." />
       <div style={{ background: 'var(--bg-2)', border: '0.5px solid var(--border)', borderRadius: 14, padding: 24, marginBottom: 16 }}>
         <SummaryRow label="Titular" value={data.name} />
         <SummaryRow label="Email" value={data.email} />
