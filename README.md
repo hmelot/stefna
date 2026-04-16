@@ -1,4 +1,4 @@
-# Vorta
+# Stefna
 
 Full funnel digital para PYMEs — web, SEO/GEO, redes, agente WhatsApp, pagos, dashboard.
 
