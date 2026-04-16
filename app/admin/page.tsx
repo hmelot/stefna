@@ -14,7 +14,8 @@ type Client = {
   cajas: string; monthly_total: number; status: string; payment_status: string; created_at: string
 }
 
-const ADMIN_KEY = typeof window !== 'undefined' ? localStorage.getItem('stefna_admin_key') : null
+// Use sessionStorage (cleared on tab close) instead of localStorage (persists forever)
+const ADMIN_KEY = typeof window !== 'undefined' ? sessionStorage.getItem('stefna_admin_key') : null
 
 export default function Admin() {
   const [key, setKey] = useState(ADMIN_KEY || '')
@@ -27,7 +28,7 @@ export default function Admin() {
     try {
       const res = await fetch(`${API_URL}/admin/stats`, { headers: { Authorization: `Bearer ${key}` } })
       if (res.ok) {
-        localStorage.setItem('stefna_admin_key', key)
+        sessionStorage.setItem('stefna_admin_key', key)
         setAuthed(true)
         const data = await res.json()
         setStats(data)

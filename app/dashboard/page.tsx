@@ -37,17 +37,18 @@ export default function Dashboard() {
   const [email, setEmail] = useState('')
   const [linkSent, setLinkSent] = useState(false)
 
-  // Check for token in URL (magic link callback)
+  // Check for token in URL hash (magic link callback — hash fragments never sent to server logs)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const token = params.get('token')
-    const saved = localStorage.getItem('stefna_session')
+    const hash = window.location.hash
+    const tokenMatch = hash.match(/token=([^&]+)/)
+    const token = tokenMatch ? tokenMatch[1] : null
+    const saved = sessionStorage.getItem('stefna_session')
 
     if (token) {
-      // Verify magic link token
+      // Clear hash immediately to avoid leaking token in browser history
+      window.history.replaceState({}, '', '/dashboard')
       verifyToken(token)
     } else if (saved) {
-      // Try existing session
       checkSession(saved)
     } else {
       setAuthState('login')
@@ -63,7 +64,7 @@ export default function Dashboard() {
       })
       const data = await res.json()
       if (data.ok && data.sessionId) {
-        localStorage.setItem('stefna_session', data.sessionId)
+        sessionStorage.setItem('stefna_session', data.sessionId)
         setSession(data.sessionId)
         setClient(data.client)
         setAuthState('authenticated')
@@ -90,7 +91,7 @@ export default function Dashboard() {
         setAuthState('authenticated')
         loadDashboard(sessionId)
       } else {
-        localStorage.removeItem('stefna_session')
+        sessionStorage.removeItem('stefna_session')
         setAuthState('login')
       }
     } catch {
@@ -119,8 +120,17 @@ export default function Dashboard() {
     } catch { /* fail silently */ }
   }
 
-  function logout() {
-    localStorage.removeItem('stefna_session')
+  async function logout() {
+    // Revoke session server-side
+    if (session) {
+      try {
+        await fetch(`${API_URL}/auth/logout`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${session}` },
+        })
+      } catch { /* Best effort */ }
+    }
+    sessionStorage.removeItem('stefna_session')
     setSession(null)
     setClient(null)
     setData(null)

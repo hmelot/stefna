@@ -117,7 +117,7 @@ function Empezar() {
     try {
       const response = await fetch(`${API_URL}/onboarding`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         body: JSON.stringify(data),
       })
       if (!response.ok) {
