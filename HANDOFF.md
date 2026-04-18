@@ -1,4 +1,4 @@
-# Stefna — Handoff Completo (16 abril 2026)
+# Stefna — Handoff Completo (17 abril 2026)
 
 ## Qué es Stefna
 Plataforma que digitaliza PYMEs chilenas. Modelo: Stefna opera todo (web, SEO, WhatsApp, cobros) a cambio de suscripción mensual. El cliente no toca nada técnico. Max 50-100 clientes (boutique).
@@ -8,8 +8,10 @@ Primer cliente: Fernando — charcutería en Puerto Varas.
 ## URLs live
 - **Landing**: https://stefna.app
 - **Onboarding**: https://stefna.app/empezar (6 pasos)
+- **Portal de Misión** (NUEVO): https://stefna.app/portal (Mission Control post-signup)
 - **Dashboard cliente**: https://stefna.app/dashboard
 - **Admin**: https://stefna.app/admin
+- **Site preview público** (NUEVO): https://stefna-api.hmelot.workers.dev/site/:clientId
 - **Worker API**: https://stefna-api.hmelot.workers.dev
 - **GitHub**: https://github.com/hmelot/stefna
 
@@ -113,17 +115,59 @@ Todas las cajas son opcionales. Sin base forzada.
 - `GET /admin/client/:id` — detalle + activity log (Bearer auth)
 
 ## D1 Tables (producción)
-clients, activity_log, magic_links, sessions, conversations, orders, agent_configs, page_views
+**v1**: clients, activity_log
+**v2**: magic_links, sessions, conversations, orders, agent_configs, page_views
+**v3** (NUEVO): onboarding_tasks, uploads, menu_items, pipeline_logs, site_previews
+
+## Portal de Misión (/portal) — sistema de onboarding autónomo
+El cliente entra via magic link 72h post-signup (auto-enviado por email).
+
+**Flujo end-to-end:**
+1. Cliente llena `/empezar` (6 pasos) → paga → datos en D1
+2. Worker crea tareas automáticas según cajas compradas
+3. Worker envía magic link con token hasheado (72h expiración)
+4. Cliente click link → entra al Portal con sessionStorage
+5. Ve checklist gamificado por caja con progress bar
+6. Cada tarea completada dispara pipeline en background:
+   - Upload fotos → CF Images direct upload
+   - Upload menú → Claude Vision OCR (doble pasada) → menu_items table
+   - Pick template + photos completo → site generation pipeline → staging URL
+7. Portal muestra staging URL live cuando la web está generada
+
+**Endpoints Worker para portal:**
+- POST `/portal/upload-url` — pide one-time URL de CF Images
+- POST `/portal/upload-complete` — registra upload, dispara OCR si kind=menu
+- GET `/portal/tasks` — lista tareas + progress
+- POST `/portal/task/:id/complete` — marca completa, dispara pipelines
+- GET `/portal/uploads?kind=photo` — lista uploads del cliente
+- GET `/portal/menu-items` — items extraídos
+- POST `/portal/menu-items/:id` — editar/borrar item extraído
+- POST `/portal/generate-site` — fuerza regen de staging
+- GET `/portal/site-preview` — staging URL del cliente
+
+**Pipelines:**
+- `menu_ocr` — Claude Sonnet 4.5 + tool use + strict schema + double-pass (temp=0). Rules CLP chilenos ($12.900→12900). Confidence por item. Flags para human review si hay mismatches.
+- `web_generate` — template + fotos + menu + horarios → HTML estático. 4 templates (minimal/modern/classic/bold). Servido en `/site/:clientId`.
+
+**Secretos pendientes** (sin estos, features degradan con 503 "not configured"):
+- 🔴 `ANTHROPIC_API_KEY` → sin esto no hay OCR de menús
+- 🔴 `CF_ACCOUNT_ID` + `CF_IMAGES_TOKEN` + `CF_IMAGES_HASH` → sin esto no hay uploads
+- Se configuran con: `npx wrangler secret put NOMBRE` en `/worker/`
 
 ## Lo que FALTA (bloqueantes marcados con 🔴)
 
 ### Producto
+- 🔴 ANTHROPIC_API_KEY (secret del Worker) → sin esto no hay OCR de menús
+- 🔴 CF Images habilitado + token + hash → sin esto no hay uploads de fotos
 - 🔴 Meta Business verificada → sin esto no hay WhatsApp encargado real
 - 🔴 MercadoPago token producción → sin esto no hay cobros
 - 🔴 Email routing hola@stefna.app → hmelot@gmail.com (2 min en Cloudflare)
-- Magic link email real (hoy solo se loguea en console, no envía email)
+- 🔴 R2 habilitado (opcional — sólo para menús PDF, fotos ya van a CF Images)
+- Magic link del portal ya se envía vía MailChannels (funciona)
 - Dashboard cliente con datos reales (hoy usa mock data si no hay sesión)
 - Google Search Console verificación
+- Reminder automation: si cliente no completa tareas en 24h/48h/72h → enviar WA/email
+- Preview/approval flow: /preview/[cliente_id] con auto-approve al día 4-7
 
 ### Landing
 - Felipe Braun section ya existe (FelipeBraun.tsx) — revisar copy y diseño
