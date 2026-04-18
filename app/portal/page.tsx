@@ -117,9 +117,19 @@ function Portal() {
       const res = await fetch(`${API_URL}/portal/tasks`, {
         headers: { Authorization: `Bearer ${sid}` },
       })
+      if (res.status === 401) {
+        // M7 fix: session expired — clear state and send back to login instead of infinite loading
+        sessionStorage.removeItem('stefna_portal_session')
+        setSession(null)
+        setData(null)
+        setAuthState('login')
+        return
+      }
       const d = await res.json()
       if (d.client) setData(d)
-    } catch {}
+    } catch {
+      // Network error — leave auth state alone, user can retry
+    }
   }
 
   async function sendMagicLink() {

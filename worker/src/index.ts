@@ -199,7 +199,7 @@ const CAJA_LABELS: Record<string, string> = {
   social: 'Redes sociales', payments: 'Cobros', dashboard: 'Panel de control',
 }
 
-async function notifySignup(body: OnboardingPayload, monthlyTotal: number, clientId: number | bigint): Promise<void> {
+async function notifySignup(body: OnboardingPayload, monthlyTotal: number, clientId: number | bigint, notificationEmail?: string): Promise<void> {
   // Redacted PII from console log (only business info, no personal data)
   console.log(`[SIGNUP] #${clientId} | ${body.businessName} (${body.industry}) | ${body.city} | ${formatCLP(monthlyTotal)}/mes | cajas: ${body.cajas.join(',')}`)
 
@@ -236,7 +236,8 @@ async function notifySignup(body: OnboardingPayload, monthlyTotal: number, clien
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        personalizations: [{ to: [{ email: 'hmelot@gmail.com', name: 'Horacio Melo' }] }],
+        // L7 fix: honor NOTIFICATION_EMAIL env var, fall back to primary inbox
+        personalizations: [{ to: [{ email: notificationEmail || 'hmelot@gmail.com', name: 'Horacio Melo' }] }],
         from: { email: 'noreply@stefna.app', name: 'Stefna' },
         subject: `🟢 Nuevo cliente: ${body.businessName} (${body.city}) — ${formatCLP(monthlyTotal)}/mes`,
         content: [{ type: 'text/plain', value: emailBody }],
@@ -337,7 +338,8 @@ async function runSiteGenPipeline(env: Env, clientId: number): Promise<void> {
 
     // Get menu items
     const { results: menuItems } = await env.DB.prepare(
-      'SELECT name, price_clp, description, category FROM menu_items WHERE client_id = ? ORDER BY category, name'
+      // M9 fix: only publish confirmed items — prevents unvalidated OCR (incl. prompt injection) from going live
+      'SELECT name, price_clp, description, category FROM menu_items WHERE client_id = ? AND confirmed = 1 ORDER BY category, name'
     ).bind(clientId).all<any>()
 
     const content: SiteContent = {
@@ -569,7 +571,7 @@ export default {
         } catch (e) { console.error('Task creation error:', e) }
 
         // Notify (non-blocking via waitUntil)
-        ctx.waitUntil(notifySignup(body, monthlyTotal, clientId!))
+        ctx.waitUntil(notifySignup(body, monthlyTotal, clientId!, env.NOTIFICATION_EMAIL))
 
         // Send portal magic link (non-blocking)
         ctx.waitUntil(sendPortalMagicLink(env, clientId!, email, body.name.trim()))
@@ -642,9 +644,22 @@ export default {
       catch { return jsonResponse({ error: 'Invalid JSON' }, 400, origin, ao) }
 
       const email = body.email?.trim().toLowerCase()
-      if (!email) return jsonResponse({ error: 'Email requerido' }, 422, origin, ao)
+      // M4 fix: validate format before DB hit (cheap reject, prevents enumeration over weird strings)
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 254) {
+        return jsonResponse({ ok: true, message: 'Si tu email está registrado, recibirás un link de acceso.' }, 200, origin, ao)
+      }
 
       const client = await env.DB.prepare('SELECT id, name FROM clients WHERE email = ?').bind(email).first<{ id: number; name: string }>()
+
+      // M3 fix: per-email throttle — don't send if one was sent in the last 60s
+      if (client) {
+        const recent = await env.DB.prepare(
+          "SELECT id FROM magic_links WHERE client_id = ? AND datetime(expires_at, '-15 minutes') > datetime('now', '-60 seconds')"
+        ).bind(client.id).first()
+        if (recent) {
+          return jsonResponse({ ok: true, message: 'Si tu email está registrado, recibirás un link de acceso.' }, 200, origin, ao)
+        }
+      }
 
       if (client) {
         const token = crypto.randomUUID() + '-' + crypto.randomUUID()
@@ -656,7 +671,7 @@ export default {
           .bind(client.id, tokenHash, expiresAt).run()
 
         // Use hash fragment instead of query param (hash fragments are never sent to servers/logs)
-        const link = `https://stefna.app/dashboard#token=${token}`
+        const link = `https://stefna.app/portal#token=${token}`
 
         // Log only truncated hash for debugging (not the full token)
         console.log(`[MAGIC LINK] client_id=${client.id} hash_prefix=${tokenHash.slice(0, 8)}...`)
@@ -688,6 +703,11 @@ export default {
 
     // ── POST /auth/verify ──
     if (url.pathname === '/auth/verify' && request.method === 'POST') {
+      // M1 fix: lock to allowed origins (prevents phishing pages from trading leaked tokens for sessions)
+      if (!origin || !ao.includes(origin)) {
+        return jsonResponse({ error: 'Forbidden origin' }, 403, origin, ao)
+      }
+
       let body: { token: string }
       try { body = await request.json() }
       catch { return jsonResponse({ error: 'Invalid JSON' }, 400, origin, ao) }
@@ -872,10 +892,24 @@ export default {
       let body: { kind: string; slot?: string }
       try { body = await request.json() } catch { body = { kind: 'photo' } }
 
-      // Validate kind
-      const validKinds = ['photo', 'menu', 'logo', 'exterior']
-      if (!validKinds.includes(body.kind)) {
+      // Validate kind (enum)
+      const validKinds = ['photo', 'menu', 'logo', 'exterior'] as const
+      if (!validKinds.includes(body.kind as any)) {
         return jsonResponse({ error: 'Invalid upload kind' }, 422, origin, ao)
+      }
+
+      // Validate slot (enum or regex)
+      if (body.slot) {
+        const validSlot = /^[a-z][a-z0-9_]{0,40}$/i.test(body.slot)
+        if (!validSlot) return jsonResponse({ error: 'Invalid slot' }, 422, origin, ao)
+      }
+
+      // Per-client quota: max 100 uploads / 24h (prevents CF Images bill abuse)
+      const recentCount = await env.DB.prepare(
+        "SELECT COUNT(*) as c FROM uploads WHERE client_id = ? AND created_at > datetime('now', '-24 hours')"
+      ).bind(session.client_id).first<{ c: number }>()
+      if ((recentCount?.c ?? 0) >= 100) {
+        return jsonResponse({ error: 'Límite diario de uploads alcanzado. Intenta mañana.' }, 429, origin, ao)
       }
 
       try {
@@ -884,6 +918,10 @@ export default {
           kind: body.kind,
           slot: body.slot || '',
         })
+        // Track issued upload URLs so we can verify ownership on upload-complete
+        await env.DB.prepare(
+          "INSERT INTO pipeline_logs (client_id, pipeline, status, details) VALUES (?, 'upload_url_issued', 'success', ?)"
+        ).bind(session.client_id, JSON.stringify({ imageId: upload.imageId, kind: body.kind, slot: body.slot || null })).run()
         return jsonResponse({ ok: true, uploadURL: upload.uploadURL, imageId: upload.imageId }, 200, origin, ao)
       } catch (e: any) {
         console.error('Upload URL error:', e)
@@ -901,20 +939,50 @@ export default {
 
       if (!body.imageId) return jsonResponse({ error: 'imageId required' }, 422, origin, ao)
 
+      // H4 fix: CF Images IDs are UUIDs — strict format prevents XSS via image URL interpolation
+      if (!/^[A-Za-z0-9_-]{1,100}$/.test(body.imageId)) {
+        return jsonResponse({ error: 'Invalid imageId format' }, 422, origin, ao)
+      }
+
+      // Validate kind (same enum as upload-url)
+      const validKinds = ['photo', 'menu', 'logo', 'exterior'] as const
+      if (!validKinds.includes(body.kind as any)) {
+        return jsonResponse({ error: 'Invalid upload kind' }, 422, origin, ao)
+      }
+
+      // Validate slot (same regex as upload-url)
+      if (body.slot && !/^[a-z][a-z0-9_]{0,40}$/i.test(body.slot)) {
+        return jsonResponse({ error: 'Invalid slot' }, 422, origin, ao)
+      }
+
+      // H3 fix: verify imageId was issued by /portal/upload-url for this specific client.
+      // We check pipeline_logs for a matching 'upload_url_issued' entry in the last hour.
+      const issued = await env.DB.prepare(
+        "SELECT id FROM pipeline_logs WHERE client_id = ? AND pipeline = 'upload_url_issued' AND created_at > datetime('now', '-1 hour') AND details LIKE ?"
+      ).bind(session.client_id, `%"imageId":"${body.imageId}"%`).first()
+      if (!issued) {
+        return jsonResponse({ error: 'Upload not authorized for this client' }, 403, origin, ao)
+      }
+
       const result = await env.DB.prepare(
         'INSERT INTO uploads (client_id, kind, slot, cf_image_id, filename, size_bytes) VALUES (?, ?, ?, ?, ?, ?)'
       ).bind(
         session.client_id,
-        body.kind?.slice(0, 50) || 'photo',
-        body.slot?.slice(0, 50) || null,
-        body.imageId.slice(0, 200),
+        body.kind,
+        body.slot || null,
+        body.imageId,
         body.filename?.slice(0, 200) || null,
         Math.min(body.sizeBytes || 0, 50_000_000),
       ).run()
 
-      // Trigger OCR pipeline if this is a menu upload
+      // Trigger OCR pipeline if this is a menu upload (with per-client daily OCR quota)
       if (body.kind === 'menu' && env.ANTHROPIC_API_KEY && env.CF_IMAGES_HASH) {
-        ctx.waitUntil(runMenuOcrPipeline(env, session.client_id, Number(result.meta.last_row_id), body.imageId))
+        const ocrCount = await env.DB.prepare(
+          "SELECT COUNT(*) as c FROM pipeline_logs WHERE client_id = ? AND pipeline = 'menu_ocr' AND status = 'started' AND created_at > datetime('now', '-24 hours')"
+        ).bind(session.client_id).first<{ c: number }>()
+        if ((ocrCount?.c ?? 0) < 20) { // max 20 OCR runs / 24h / client
+          ctx.waitUntil(runMenuOcrPipeline(env, session.client_id, Number(result.meta.last_row_id), body.imageId))
+        }
       }
 
       return jsonResponse({ ok: true, uploadId: result.meta.last_row_id }, 201, origin, ao)
@@ -1025,6 +1093,8 @@ export default {
             'Cache-Control': 'public, max-age=60',
             'X-Content-Type-Options': 'nosniff',
             'X-Frame-Options': 'SAMEORIGIN',
+            // M5 fix: block search engines from indexing staging/preview URLs
+            'X-Robots-Tag': 'noindex, nofollow',
           },
         })
       } catch (e) {
