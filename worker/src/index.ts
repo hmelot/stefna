@@ -11,11 +11,20 @@
  * Deployed to: stefna-api.hmelot.workers.dev
  */
 
+import { tasksForClient, calcProgress, TASKS_BY_CAJA } from './tasks'
+import { createDirectUploadUrl, imageDeliveryUrl, fetchImageAsBase64 } from './images'
+import { extractMenuDoublePass } from './ocr'
+import { generateSite, SiteContent } from './site-gen'
+
 export interface Env {
   DB: D1Database
   ENVIRONMENT?: string       // 'production' | 'development'
   ADMIN_KEY?: string         // Secret key for admin endpoints
   NOTIFICATION_EMAIL?: string // Where to send signup notifications
+  ANTHROPIC_API_KEY?: string // Claude API key for menu OCR
+  CF_ACCOUNT_ID?: string     // Cloudflare account ID for Images API
+  CF_IMAGES_TOKEN?: string   // CF Images API token
+  CF_IMAGES_HASH?: string    // Account hash for imagedelivery.net URLs
 }
 
 // ── Crypto helpers ──
@@ -238,6 +247,185 @@ async function notifySignup(body: OnboardingPayload, monthlyTotal: number, clien
   }
 }
 
+// ── Portal magic link ──
+
+async function sendPortalMagicLink(env: Env, clientId: number | bigint, email: string, name: string): Promise<void> {
+  try {
+    const token = crypto.randomUUID() + '-' + crypto.randomUUID()
+    const tokenHash = await hashToken(token)
+    // Portal links valid for 72h (onboarding is a multi-day process)
+    const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
+
+    await env.DB.prepare('INSERT INTO magic_links (client_id, token, expires_at) VALUES (?, ?, ?)')
+      .bind(clientId, tokenHash, expiresAt).run()
+
+    const firstName = name.split(' ')[0] || 'hola'
+    const link = `https://stefna.app/portal#token=${token}`
+
+    await fetch('https://api.mailchannels.net/tx/v1/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        personalizations: [{ to: [{ email, name }] }],
+        from: { email: 'noreply@stefna.app', name: 'Stefna' },
+        subject: `${firstName}, tu panel está listo`,
+        content: [{
+          type: 'text/plain',
+          value: [
+            `${firstName},`,
+            ``,
+            `Bienvenido a Stefna. Tu solicitud está recibida.`,
+            ``,
+            `Para que tu negocio esté online lo antes posible, necesitamos algunas cosas más. Todo está en tu panel — son tareas cortas, de 2 a 5 minutos cada una.`,
+            ``,
+            `Abre tu panel:`,
+            link,
+            ``,
+            `Este link es válido por 72 horas. Si se vence, pedí uno nuevo en stefna.app/portal.`,
+            ``,
+            `Tú seguí haciendo lo tuyo. Nosotros hacemos el resto.`,
+            ``,
+            `— Stefna`,
+          ].join('\n'),
+        }],
+      }),
+    })
+  } catch (e) {
+    console.error('Portal magic link error:', e)
+  }
+}
+
+// ── Site generation pipeline ──
+
+async function runSiteGenPipeline(env: Env, clientId: number): Promise<void> {
+  const started = Date.now()
+  try {
+    await env.DB.prepare("INSERT INTO pipeline_logs (client_id, pipeline, status) VALUES (?, 'web_generate', 'started')")
+      .bind(clientId).run()
+
+    // Get client info
+    const client = await env.DB.prepare(
+      'SELECT business_name, industry, city, whatsapp_phone, open_time, close_time, days, delivery FROM clients WHERE id = ?'
+    ).bind(clientId).first<any>()
+    if (!client) throw new Error('Client not found')
+
+    // Get template choice
+    const templateTask = await env.DB.prepare(
+      "SELECT payload FROM onboarding_tasks WHERE client_id = ? AND task_key = 'pick_template'"
+    ).bind(clientId).first<{ payload: string }>()
+    let template: 'minimal' | 'modern' | 'classic' | 'bold' = 'minimal'
+    if (templateTask?.payload) {
+      try {
+        const p = JSON.parse(templateTask.payload)
+        if (['minimal', 'modern', 'classic', 'bold'].includes(p.template)) template = p.template
+      } catch {}
+    }
+
+    // Get description
+    const descTask = await env.DB.prepare(
+      "SELECT payload FROM onboarding_tasks WHERE client_id = ? AND task_key = 'describe_business'"
+    ).bind(clientId).first<{ payload: string }>()
+    let description = `${client.industry} en ${client.city}`
+    if (descTask?.payload) {
+      try { description = JSON.parse(descTask.payload).text || description } catch {}
+    }
+
+    // Get photos
+    const { results: photos } = await env.DB.prepare(
+      "SELECT cf_image_id, slot FROM uploads WHERE client_id = ? AND kind IN ('photo', 'exterior') ORDER BY created_at"
+    ).bind(clientId).all<{ cf_image_id: string; slot: string | null }>()
+
+    // Get menu items
+    const { results: menuItems } = await env.DB.prepare(
+      'SELECT name, price_clp, description, category FROM menu_items WHERE client_id = ? ORDER BY category, name'
+    ).bind(clientId).all<any>()
+
+    const content: SiteContent = {
+      business_name: client.business_name,
+      description,
+      city: client.city,
+      whatsapp: client.whatsapp_phone,
+      hours: { open: client.open_time, close: client.close_time, days: (client.days || '').split(',') },
+      delivery: { enabled: !!client.delivery },
+      photos: photos.filter(p => p.cf_image_id).map(p => ({ image_id: p.cf_image_id, slot: p.slot || undefined })),
+      menu_items: menuItems as any,
+      template,
+    }
+
+    const stagingUrl = `https://stefna-api.hmelot.workers.dev/site/${clientId}`
+
+    // Upsert site_preview
+    await env.DB.prepare(
+      `INSERT INTO site_previews (client_id, template_id, staging_url, content_json, updated_at)
+       VALUES (?, ?, ?, ?, datetime('now'))
+       ON CONFLICT(client_id) DO UPDATE SET
+         template_id = excluded.template_id,
+         staging_url = excluded.staging_url,
+         content_json = excluded.content_json,
+         updated_at = datetime('now')`
+    ).bind(clientId, template, stagingUrl, JSON.stringify(content)).run()
+
+    const duration = Date.now() - started
+    await env.DB.prepare("INSERT INTO pipeline_logs (client_id, pipeline, status, duration_ms, details) VALUES (?, 'web_generate', 'success', ?, ?)")
+      .bind(clientId, duration, JSON.stringify({ template, photos: content.photos.length, menu_items: content.menu_items?.length || 0 })).run()
+  } catch (err: any) {
+    const duration = Date.now() - started
+    console.error('Site gen pipeline error:', err)
+    await env.DB.prepare("INSERT INTO pipeline_logs (client_id, pipeline, status, duration_ms, details) VALUES (?, 'web_generate', 'failed', ?, ?)")
+      .bind(clientId, duration, JSON.stringify({ error: String(err).slice(0, 500) })).run()
+  }
+}
+
+// ── Menu OCR pipeline ──
+
+async function runMenuOcrPipeline(env: Env, clientId: number, uploadId: number, cfImageId: string): Promise<void> {
+  const started = Date.now()
+  try {
+    await env.DB.prepare("INSERT INTO pipeline_logs (client_id, pipeline, status, details) VALUES (?, 'menu_ocr', 'started', ?)")
+      .bind(clientId, JSON.stringify({ upload_id: uploadId, cf_image_id: cfImageId })).run()
+
+    if (!env.ANTHROPIC_API_KEY || !env.CF_IMAGES_HASH) {
+      throw new Error('ANTHROPIC_API_KEY or CF_IMAGES_HASH not configured')
+    }
+
+    // Fetch the uploaded image from CF Images as base64
+    const imageUrl = imageDeliveryUrl(env.CF_IMAGES_HASH, cfImageId, 'public')
+    const { base64, mediaType } = await fetchImageAsBase64(imageUrl)
+
+    // Run double-pass extraction
+    const { result, needsReview, reason } = await extractMenuDoublePass(base64, mediaType, env.ANTHROPIC_API_KEY)
+
+    // Save extracted items to menu_items table
+    const stmts = result.items.map(item =>
+      env.DB.prepare('INSERT INTO menu_items (client_id, upload_id, name, price_clp, description, category, confidence) VALUES (?, ?, ?, ?, ?, ?, ?)')
+        .bind(
+          clientId,
+          uploadId,
+          item.name.slice(0, 200),
+          item.price_clp,
+          item.description?.slice(0, 500) || null,
+          item.category?.slice(0, 100) || null,
+          item.confidence,
+        )
+    )
+    if (stmts.length > 0) await env.DB.batch(stmts)
+
+    // Auto-mark confirm_menu task as pending (currently_due) with count
+    await env.DB.prepare(
+      `UPDATE onboarding_tasks SET payload = ? WHERE client_id = ? AND task_key = 'confirm_menu'`
+    ).bind(JSON.stringify({ extracted: result.items.length, needsReview, reason }), clientId).run()
+
+    const duration = Date.now() - started
+    await env.DB.prepare("INSERT INTO pipeline_logs (client_id, pipeline, status, duration_ms, details) VALUES (?, 'menu_ocr', 'success', ?, ?)")
+      .bind(clientId, duration, JSON.stringify({ items: result.items.length, needsReview, reason })).run()
+  } catch (err: any) {
+    const duration = Date.now() - started
+    console.error('Menu OCR pipeline error:', err)
+    await env.DB.prepare("INSERT INTO pipeline_logs (client_id, pipeline, status, duration_ms, details) VALUES (?, 'menu_ocr', 'failed', ?, ?)")
+      .bind(clientId, duration, JSON.stringify({ error: String(err).slice(0, 500) })).run()
+  }
+}
+
 // ── Routes ──
 
 export default {
@@ -349,8 +537,42 @@ export default {
             .run()
         } catch (e) { console.error('Activity log error:', e) }
 
+        // Create onboarding tasks for Mission Control portal
+        try {
+          const taskDefs = tasksForClient(body.cajas)
+          const stmts = taskDefs.map(t =>
+            env.DB.prepare('INSERT OR IGNORE INTO onboarding_tasks (client_id, caja, task_key, title, description, order_num, bucket) VALUES (?, ?, ?, ?, ?, ?, ?)')
+              .bind(clientId, t.caja, t.task_key, t.title, t.description, t.order_num, 'currently_due')
+          )
+          // If client already provided webTemplate in step 5, mark that task completed
+          if (body.webTemplate && body.cajas.includes('web')) {
+            stmts.push(
+              env.DB.prepare("UPDATE onboarding_tasks SET bucket = 'completed', payload = ?, completed_at = datetime('now') WHERE client_id = ? AND task_key = 'pick_template'")
+                .bind(JSON.stringify({ template: body.webTemplate }), clientId)
+            )
+          }
+          // If client provided catalogItems in step 5, pre-seed menu_items
+          if (body.catalogItems?.trim() && body.cajas.includes('whatsapp')) {
+            stmts.push(
+              env.DB.prepare("UPDATE onboarding_tasks SET bucket = 'completed', completed_at = datetime('now') WHERE client_id = ? AND task_key = 'upload_menu'")
+                .bind(clientId)
+            )
+          }
+          // Mark general 'describe_business' complete if we have the description
+          if (body.businessDescription?.trim()) {
+            stmts.push(
+              env.DB.prepare("UPDATE onboarding_tasks SET bucket = 'completed', completed_at = datetime('now') WHERE client_id = ? AND task_key = 'describe_business'")
+                .bind(clientId)
+            )
+          }
+          await env.DB.batch(stmts)
+        } catch (e) { console.error('Task creation error:', e) }
+
         // Notify (non-blocking via waitUntil)
         ctx.waitUntil(notifySignup(body, monthlyTotal, clientId!))
+
+        // Send portal magic link (non-blocking)
+        ctx.waitUntil(sendPortalMagicLink(env, clientId!, email, body.name.trim()))
 
         return jsonResponse({ ok: true, clientId, monthlyTotal, message: 'Registro recibido. Te contactamos por WhatsApp pronto.' }, 201, origin, ao)
       } catch (err: any) {
@@ -564,6 +786,270 @@ export default {
         recentConversations: recentConvos.results,
         recentOrders: recentOrders.results,
       }, 200, origin, ao)
+    }
+
+    // ══════════════════════════════════════════
+    // PORTAL — Mission Control
+    // ══════════════════════════════════════════
+
+    // ── GET /portal/tasks ── returns all tasks + progress for logged-in client
+    if (url.pathname === '/portal/tasks' && request.method === 'GET') {
+      const session = await getSessionClient(request, env)
+      if (!session) return jsonResponse({ error: 'Session expired' }, 401, origin, ao)
+
+      // Get client info + cajas
+      const client = await env.DB.prepare(
+        'SELECT id, name, business_name, industry, city, cajas FROM clients WHERE id = ?'
+      ).bind(session.client_id).first<any>()
+      if (!client) return jsonResponse({ error: 'Client not found' }, 404, origin, ao)
+
+      let cajas: string[] = []
+      try { cajas = JSON.parse(client.cajas || '[]') } catch {}
+
+      // Get tasks
+      const { results: tasks } = await env.DB.prepare(
+        'SELECT id, caja, task_key, title, description, bucket, order_num, payload, completed_at FROM onboarding_tasks WHERE client_id = ? ORDER BY caja, order_num'
+      ).bind(session.client_id).all<any>()
+
+      // Calculate progress
+      const progress = calcProgress(tasks as any, cajas)
+
+      return jsonResponse({
+        client: {
+          name: client.name,
+          business_name: client.business_name,
+          industry: client.industry,
+          city: client.city,
+          cajas,
+        },
+        tasks,
+        progress,
+      }, 200, origin, ao)
+    }
+
+    // ── POST /portal/task/:id/complete ── mark a task complete with payload
+    if (url.pathname.startsWith('/portal/task/') && url.pathname.endsWith('/complete') && request.method === 'POST') {
+      const session = await getSessionClient(request, env)
+      if (!session) return jsonResponse({ error: 'Session expired' }, 401, origin, ao)
+
+      const taskIdStr = url.pathname.split('/')[3]
+      const taskId = parseInt(taskIdStr, 10)
+      if (isNaN(taskId)) return jsonResponse({ error: 'Invalid task ID' }, 400, origin, ao)
+
+      let body: { payload?: any }
+      try { body = await request.json() } catch { body = {} }
+
+      // Verify the task belongs to this client
+      const task = await env.DB.prepare('SELECT id, client_id FROM onboarding_tasks WHERE id = ?')
+        .bind(taskId).first<{ id: number; client_id: number }>()
+      if (!task || task.client_id !== session.client_id) {
+        return jsonResponse({ error: 'Task not found' }, 404, origin, ao)
+      }
+
+      await env.DB.prepare(
+        "UPDATE onboarding_tasks SET bucket = 'completed', payload = ?, completed_at = datetime('now'), updated_at = datetime('now') WHERE id = ?"
+      ).bind(body.payload ? JSON.stringify(body.payload) : null, taskId).run()
+
+      // Trigger site regeneration if this was a web-related task
+      const webTaskKeys = ['upload_photos', 'pick_template', 'describe_business', 'confirm_content']
+      const webTask = await env.DB.prepare('SELECT task_key FROM onboarding_tasks WHERE id = ?').bind(taskId).first<{ task_key: string }>()
+      if (webTask && webTaskKeys.includes(webTask.task_key)) {
+        ctx.waitUntil(runSiteGenPipeline(env, session.client_id))
+      }
+
+      return jsonResponse({ ok: true }, 200, origin, ao)
+    }
+
+    // ── POST /portal/upload-url ── request a CF Images direct upload URL
+    if (url.pathname === '/portal/upload-url' && request.method === 'POST') {
+      const session = await getSessionClient(request, env)
+      if (!session) return jsonResponse({ error: 'Session expired' }, 401, origin, ao)
+
+      if (!env.CF_ACCOUNT_ID || !env.CF_IMAGES_TOKEN) {
+        return jsonResponse({ error: 'Image uploads not configured yet' }, 503, origin, ao)
+      }
+
+      let body: { kind: string; slot?: string }
+      try { body = await request.json() } catch { body = { kind: 'photo' } }
+
+      // Validate kind
+      const validKinds = ['photo', 'menu', 'logo', 'exterior']
+      if (!validKinds.includes(body.kind)) {
+        return jsonResponse({ error: 'Invalid upload kind' }, 422, origin, ao)
+      }
+
+      try {
+        const upload = await createDirectUploadUrl(env.CF_ACCOUNT_ID, env.CF_IMAGES_TOKEN, {
+          client_id: String(session.client_id),
+          kind: body.kind,
+          slot: body.slot || '',
+        })
+        return jsonResponse({ ok: true, uploadURL: upload.uploadURL, imageId: upload.imageId }, 200, origin, ao)
+      } catch (e: any) {
+        console.error('Upload URL error:', e)
+        return jsonResponse({ error: 'Could not create upload URL' }, 500, origin, ao)
+      }
+    }
+
+    // ── POST /portal/upload-complete ── record completed upload in DB
+    if (url.pathname === '/portal/upload-complete' && request.method === 'POST') {
+      const session = await getSessionClient(request, env)
+      if (!session) return jsonResponse({ error: 'Session expired' }, 401, origin, ao)
+
+      let body: { imageId: string; kind: string; slot?: string; filename?: string; sizeBytes?: number }
+      try { body = await request.json() } catch { return jsonResponse({ error: 'Invalid JSON' }, 400, origin, ao) }
+
+      if (!body.imageId) return jsonResponse({ error: 'imageId required' }, 422, origin, ao)
+
+      const result = await env.DB.prepare(
+        'INSERT INTO uploads (client_id, kind, slot, cf_image_id, filename, size_bytes) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind(
+        session.client_id,
+        body.kind?.slice(0, 50) || 'photo',
+        body.slot?.slice(0, 50) || null,
+        body.imageId.slice(0, 200),
+        body.filename?.slice(0, 200) || null,
+        Math.min(body.sizeBytes || 0, 50_000_000),
+      ).run()
+
+      // Trigger OCR pipeline if this is a menu upload
+      if (body.kind === 'menu' && env.ANTHROPIC_API_KEY && env.CF_IMAGES_HASH) {
+        ctx.waitUntil(runMenuOcrPipeline(env, session.client_id, Number(result.meta.last_row_id), body.imageId))
+      }
+
+      return jsonResponse({ ok: true, uploadId: result.meta.last_row_id }, 201, origin, ao)
+    }
+
+    // ── GET /portal/uploads ── list uploads for this client
+    if (url.pathname === '/portal/uploads' && request.method === 'GET') {
+      const session = await getSessionClient(request, env)
+      if (!session) return jsonResponse({ error: 'Session expired' }, 401, origin, ao)
+
+      const kind = url.searchParams.get('kind')
+      const query = kind
+        ? 'SELECT id, kind, slot, cf_image_id, filename, created_at FROM uploads WHERE client_id = ? AND kind = ? ORDER BY created_at DESC'
+        : 'SELECT id, kind, slot, cf_image_id, filename, created_at FROM uploads WHERE client_id = ? ORDER BY created_at DESC'
+      const stmt = kind
+        ? env.DB.prepare(query).bind(session.client_id, kind)
+        : env.DB.prepare(query).bind(session.client_id)
+
+      const { results } = await stmt.all()
+
+      // Add delivery URLs
+      const accountHash = env.CF_IMAGES_HASH || 'unknown'
+      const withUrls = results.map((r: any) => ({
+        ...r,
+        thumbnail_url: r.cf_image_id ? imageDeliveryUrl(accountHash, r.cf_image_id, 'thumbnail') : null,
+        public_url: r.cf_image_id ? imageDeliveryUrl(accountHash, r.cf_image_id, 'public') : null,
+      }))
+
+      return jsonResponse({ uploads: withUrls }, 200, origin, ao)
+    }
+
+    // ── GET /portal/menu-items ── list extracted menu items (editable)
+    if (url.pathname === '/portal/menu-items' && request.method === 'GET') {
+      const session = await getSessionClient(request, env)
+      if (!session) return jsonResponse({ error: 'Session expired' }, 401, origin, ao)
+
+      const { results } = await env.DB.prepare(
+        'SELECT id, name, price_clp, description, category, confidence, confirmed, created_at FROM menu_items WHERE client_id = ? ORDER BY category, name'
+      ).bind(session.client_id).all()
+
+      return jsonResponse({ items: results }, 200, origin, ao)
+    }
+
+    // ── PATCH /portal/menu-items/:id ── edit a menu item
+    if (url.pathname.startsWith('/portal/menu-items/') && request.method === 'POST') {
+      const session = await getSessionClient(request, env)
+      if (!session) return jsonResponse({ error: 'Session expired' }, 401, origin, ao)
+
+      const itemId = parseInt(url.pathname.split('/').pop() || '', 10)
+      if (isNaN(itemId)) return jsonResponse({ error: 'Invalid item ID' }, 400, origin, ao)
+
+      let body: { name?: string; price_clp?: number; description?: string; category?: string; confirmed?: boolean; delete?: boolean }
+      try { body = await request.json() } catch { return jsonResponse({ error: 'Invalid JSON' }, 400, origin, ao) }
+
+      // Verify ownership
+      const item = await env.DB.prepare('SELECT id, client_id FROM menu_items WHERE id = ?')
+        .bind(itemId).first<{ id: number; client_id: number }>()
+      if (!item || item.client_id !== session.client_id) {
+        return jsonResponse({ error: 'Item not found' }, 404, origin, ao)
+      }
+
+      if (body.delete) {
+        await env.DB.prepare('DELETE FROM menu_items WHERE id = ?').bind(itemId).run()
+        return jsonResponse({ ok: true, deleted: true }, 200, origin, ao)
+      }
+
+      await env.DB.prepare(`UPDATE menu_items SET
+        name = COALESCE(?, name),
+        price_clp = COALESCE(?, price_clp),
+        description = COALESCE(?, description),
+        category = COALESCE(?, category),
+        confirmed = COALESCE(?, confirmed),
+        updated_at = datetime('now')
+        WHERE id = ?`)
+        .bind(
+          body.name?.slice(0, 200) ?? null,
+          typeof body.price_clp === 'number' ? body.price_clp : null,
+          body.description?.slice(0, 500) ?? null,
+          body.category?.slice(0, 100) ?? null,
+          typeof body.confirmed === 'boolean' ? (body.confirmed ? 1 : 0) : null,
+          itemId,
+        ).run()
+
+      return jsonResponse({ ok: true }, 200, origin, ao)
+    }
+
+    // ══════════════════════════════════════════
+    // SITE PREVIEW — public renderer for generated sites
+    // ══════════════════════════════════════════
+
+    // ── GET /site/:clientId ── renders the client's generated website
+    if (url.pathname.startsWith('/site/') && request.method === 'GET') {
+      const idStr = url.pathname.split('/').pop() || ''
+      const clientId = parseInt(idStr, 10)
+      if (isNaN(clientId)) return new Response('Not found', { status: 404 })
+
+      const preview = await env.DB.prepare('SELECT content_json, template_id FROM site_previews WHERE client_id = ?')
+        .bind(clientId).first<{ content_json: string; template_id: string }>()
+
+      if (!preview) return new Response('Site not generated yet', { status: 404 })
+
+      try {
+        const content: SiteContent = JSON.parse(preview.content_json)
+        const html = generateSite(content, env.CF_IMAGES_HASH || 'unknown')
+        return new Response(html, {
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'public, max-age=60',
+            'X-Content-Type-Options': 'nosniff',
+            'X-Frame-Options': 'SAMEORIGIN',
+          },
+        })
+      } catch (e) {
+        return new Response('Site render error', { status: 500 })
+      }
+    }
+
+    // ── POST /portal/generate-site ── regenerate the client's site preview
+    if (url.pathname === '/portal/generate-site' && request.method === 'POST') {
+      const session = await getSessionClient(request, env)
+      if (!session) return jsonResponse({ error: 'Session expired' }, 401, origin, ao)
+
+      ctx.waitUntil(runSiteGenPipeline(env, session.client_id))
+      return jsonResponse({ ok: true, message: 'Generando tu web…' }, 202, origin, ao)
+    }
+
+    // ── GET /portal/site-preview ── returns the current staging URL for this client
+    if (url.pathname === '/portal/site-preview' && request.method === 'GET') {
+      const session = await getSessionClient(request, env)
+      if (!session) return jsonResponse({ error: 'Session expired' }, 401, origin, ao)
+
+      const preview = await env.DB.prepare('SELECT staging_url, template_id, updated_at, approved_at FROM site_previews WHERE client_id = ?')
+        .bind(session.client_id).first()
+
+      return jsonResponse({ preview: preview || null, staging_url: preview ? `https://stefna-api.hmelot.workers.dev/site/${session.client_id}` : null }, 200, origin, ao)
     }
 
     return jsonResponse({ error: 'Not found' }, 404, origin, ao)
